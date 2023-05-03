@@ -1,0 +1,81 @@
+version: "3.9"
+services:
+  database:
+    container_name: online-admittance-api-db
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: online-admittance-api
+      MYSQL_USER: online-admittance-api
+      MYSQL_PASSWORD: secret
+    command:
+      [
+        "mysqld",
+        "--character-set-server=utf8mb4",
+        "--collation-server=utf8mb4_unicode_ci",
+      ]
+    volumes:
+      - online-admittance-api_mysql:/var/lib/mysql
+    ports:
+      - 33006:3306
+
+  phpmyadmin:
+    container_name: online-admittance-api-phpmyadmin
+    depends_on:
+      - database
+    image: phpmyadmin/phpmyadmin
+    ports:
+        - 81:80
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+
+  minio:
+    container_name: online-admittance-api-minio
+    image: minio/minio
+    env_file:
+      - .env
+    environment:
+      MINIO_ACCESS_KEY: ${AWS_ACCESS_KEY_ID}
+      MINIO_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY}
+    command: server --console-address ":9000" --address ":9001" /data
+    volumes:
+      - online-admittance-api_minio-data:/data
+    expose:
+      - 9001
+    ports:
+      - 83:9000
+      - 84:9001
+
+  minio-client:
+    container_name: online-admittance-api-minio-bucket
+    image: minio/mc
+    restart: on-failure
+    depends_on:
+      - minio
+    env_file:
+      - .env
+    environment:
+      MINIO_ACCESS_KEY: ${AWS_ACCESS_KEY_ID}
+      MINIO_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY}
+      MINIO_BUCKET: ${AWS_BUCKET}
+    entrypoint: >
+      /bin/sh -c "
+      curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh -o wait-for-it.sh;
+      chmod +x wait-for-it.sh;
+      ./wait-for-it.sh minio:9001;
+      /usr/bin/mc config host add local http://minio:9001 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+      /usr/bin/mc rm -r --force local/$${MINIO_BUCKET};
+      /usr/bin/mc mb local/$${MINIO_BUCKET};
+      /usr/bin/mc policy set public local/$${MINIO_BUCKET};
+      exit 0;"
+
+
+volumes:
+  online-admittance-api_mysql:
+  online-admittance-api_minio-data:
+
+networks:
+  default:
+    name: online-admittance-api-network
+
