@@ -2,26 +2,19 @@
 import { array, string, object } from "zod";
 
 const { $dayjs } = useNuxtApp();
-const steps = [
-  "Select start date",
-  "Select end date",
-  "Select holidays",
-  "Verify dates",
-];
+const steps = ["Select dates", "Select holidays", "Verify dates"];
 
 const initialValues: Record<string, string>[] = [
   {
     startDate: $dayjs().format("YYYY-MM-DD"),
+    endDate: $dayjs().add(1, "d").format("YYYY-MM-DD"),
   },
-  { endDate: $dayjs().add(1, "d").format("YYYY-MM-DD") },
   {},
 ];
 
 const schemas = [
   object({
     startDate: string().min(1),
-  }),
-  object({
     endDate: string().min(1),
   }),
   object({
@@ -43,10 +36,10 @@ const schemas = [
     :steps="steps"
   >
     <FormStep>
-      <DateSelect name="startDate" />
-    </FormStep>
-    <FormStep>
-      <DateSelect name="endDate" />
+      <div class="flex gap-4">
+        <DateSelect label="Start date" class="grow" name="startDate" />
+        <DateSelect label="End date" class="grow" name="endDate" />
+      </div>
     </FormStep>
     <FormStep> Holidays </FormStep>
     <FormStep>

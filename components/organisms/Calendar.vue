@@ -3,15 +3,7 @@ import { number, object } from "zod";
 
 const { $dayjs } = useNuxtApp();
 
-const weekDays = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const props = defineProps<{ highlightedDate?: string }>();
 defineEmits<{ (e: "select:date", value: string): void }>();
@@ -57,8 +49,10 @@ function decrementMonth() {
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-8">
-    <div class="flex gap-4 items-center">
+  <div
+    class="flex flex-col items-center gap-4 bg-white p-4 shadow-lg rounded-lg"
+  >
+    <div class="flex gap-2 items-center">
       <div
         class="i-heroicons-chevron-left w-4 h-4 cursor-pointer"
         @click="decrementMonth"
@@ -96,16 +90,16 @@ function decrementMonth() {
       />
     </div>
 
-    <div class="grid grid-cols-7 gap-4 w-full text-center">
+    <div class="grid grid-cols-7 gap-2 w-full text-center">
       <div
         v-for="day in weekDays"
         :key="day"
-        class="p-4 border-b border-gray-300"
+        class="p-2 border-b border-gray-300"
       >
         {{ day }}
       </div>
     </div>
-    <div class="grid grid-cols-7 gap-4 w-full">
+    <div class="grid grid-cols-7 gap-2 w-full">
       <div
         v-for="i in startOfMonth.day()"
         :key="`month-start-${i}`"
@@ -114,7 +108,7 @@ function decrementMonth() {
       <div
         v-for="i in endOfMonth.date()"
         :key="`month-day-${i}`"
-        class="p-8 border border-gray-300 relative cursor-pointer hover:(bg-blue-300 text-white)"
+        class="p-2 border border-gray-300 flex items-center justify-center cursor-pointer hover:(bg-blue-300 text-white)"
         :class="{
           'bg-blue-300 text-white': computeSameDay(i),
           'bg-white': !computeSameDay(i),
@@ -126,7 +120,7 @@ function decrementMonth() {
           )
         "
       >
-        <span class="absolute top-2 right-2">{{ i }}</span>
+        {{ i }}
       </div>
       <div
         v-for="i in 6 - endOfMonth.day()"

@@ -1,16 +1,45 @@
 <script lang="ts" setup>
-const props = defineProps<{ name: string }>();
+import { vOnClickOutside } from "@vueuse/components";
+
+const props = defineProps<{ label: string; name: string }>();
 const { value, setValue, errors } = useField<string>(
   () => props.name,
   undefined
 );
+const isCalendarShown = ref(false);
+
+function showCalendar() {
+  isCalendarShown.value = true;
+}
+
+function hideCalendar() {
+  isCalendarShown.value = false;
+}
+
+function setInputValueAndHideCalendar(value: string) {
+  setValue(value);
+  hideCalendar();
+}
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-4">
+  <div
+    v-on-click-outside="hideCalendar"
+    class="relative flex flex-col items-center gap-4"
+  >
     <FormElement :error="errors[0]">
-      <Input label="Date" :name="name" placeholder="YYYY-MM-DD" />
+      <Input
+        :label="label"
+        :name="name"
+        placeholder="YYYY-MM-DD"
+        @focus="showCalendar"
+      />
     </FormElement>
-    <Calendar :highlighted-date="value" @select:date="setValue" />
+    <div v-if="isCalendarShown" class="absolute top-[120%]">
+      <Calendar
+        :highlighted-date="value"
+        @select:date="setInputValueAndHideCalendar"
+      />
+    </div>
   </div>
 </template>
