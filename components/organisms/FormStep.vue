@@ -13,7 +13,5 @@ const shouldShow = computed(() => {
 </script>
 
 <template>
-  <div v-if="shouldShow">
-    <slot />
-  </div>
+  <slot v-if="shouldShow" />
 </template>

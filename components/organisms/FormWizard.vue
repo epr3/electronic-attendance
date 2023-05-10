@@ -3,7 +3,10 @@ import { ZodRawShape, ZodObject } from "zod";
 
 const props = defineProps<{
   validationSchema: ZodObject<ZodRawShape>[];
-  initialValues: Record<string, string>[];
+  initialValues: Record<
+    string,
+    string | { startDate: string; endDate: string }[]
+  >[];
   steps: string[];
 }>();
 
@@ -32,32 +35,20 @@ const hasPrevious = computed(() => {
 
 // extracts the indivdual step schema
 const currentSchema = computed(() => {
-  return props.validationSchema[currentStepIdx.value];
+  return toTypedSchema(props.validationSchema[currentStepIdx.value]);
 });
 
 const currentInitialValues = computed(() => {
   return props.initialValues[currentStepIdx.value];
 });
-
-const { values, handleSubmit } = useForm({
-  // vee-validate will be aware of computed schema changes
-  validationSchema: toTypedSchema(currentSchema.value),
-  initialValues: currentInitialValues,
-  // turn this on so each step values won't get removed when you move back or to the next step
-  keepValuesOnUnmount: true,
-});
-
 // We are using the "submit" handler to progress to next steps
 // and to submit the form if its the last step
-const onSubmit = handleSubmit((values) => {
-  if (!isLastStep.value) {
-    currentStepIdx.value++;
-
-    return;
-  }
-
-  // Let the parent know the form was filled across all steps
-  emit("submit", values);
+const { values, handleSubmit, resetForm } = useForm({
+  // vee-validate will be aware of computed schema changes
+  validationSchema: currentSchema.value,
+  // initialValues: {},
+  // turn this on so each step values won't get removed when you move back or to the next step
+  keepValuesOnUnmount: true,
 });
 
 function goToPrev() {
@@ -67,12 +58,36 @@ function goToPrev() {
 
   currentStepIdx.value--;
 }
+
+watch(
+  currentStepIdx,
+  () => {
+    resetForm({
+      values: { ...currentInitialValues.value, ...values },
+    });
+  },
+
+  { immediate: true }
+);
+
+// We are using the "submit" handler to progress to next steps
+// and to submit the form if its the last step
+const onSubmit = handleSubmit(() => {
+  if (!isLastStep.value) {
+    currentStepIdx.value++;
+
+    return;
+  }
+
+  // Let the parent know the form was filled across all steps
+  emit("submit", values);
+});
 </script>
 
 <template>
   <div class="flex flex-col gap-8">
     <Steps :steps="steps" :active-index="currentStepIdx" />
-    <form class="flex flex-col gap-4" @submit="onSubmit">
+    <form novalidate class="flex flex-col gap-4" @submit="onSubmit">
       <slot v-bind="{ values }" />
 
       <div class="flex gap-4">

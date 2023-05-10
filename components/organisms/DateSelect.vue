@@ -28,14 +28,16 @@ function setInputValueAndHideCalendar(value: string) {
     class="relative flex flex-col items-center gap-4"
   >
     <FormElement :error="errors[0]">
-      <Input
-        :label="label"
-        :name="name"
-        placeholder="YYYY-MM-DD"
-        @focus="showCalendar"
-      />
+      <Input :label="label" :name="name" placeholder="YYYY-MM-DD">
+        <template #right-icon>
+          <div
+            class="i-heroicons-calendar w-4 h-4 cursor-pointer"
+            @click="showCalendar"
+          />
+        </template>
+      </Input>
     </FormElement>
-    <div v-if="isCalendarShown" class="absolute top-[120%]">
+    <div v-if="isCalendarShown" class="absolute top-[120%] z-10">
       <Calendar
         :highlighted-date="value"
         @select:date="setInputValueAndHideCalendar"
