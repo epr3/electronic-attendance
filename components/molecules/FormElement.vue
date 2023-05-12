@@ -1,10 +1,12 @@
 <script lang="ts" setup>
-defineProps<{ error?: string }>();
+const props = defineProps<{ name: string }>();
+
+const message = useFieldError(props.name);
 </script>
 
 <template>
   <div class="w-full">
     <slot />
-    <p v-if="error" class="text-red-500 text-xs mt-2">{{ error }}</p>
+    <p v-if="message" class="text-red-500 text-xs mt-2">{{ message }}</p>
   </div>
 </template>

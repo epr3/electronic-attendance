@@ -52,11 +52,11 @@ const onSubmit = handleSubmit(async (values) => {
     <div class="space-y-4 p-4 lg:p-8 xl:w-128">
       <h4 class="text-2xl font-bold">Log in</h4>
       <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
-        <FormElement :error="errors.email">
+        <FormElement name="email">
           <Input label="Email" type="email" name="email" />
         </FormElement>
 
-        <FormElement :error="errors.password">
+        <FormElement name="password">
           <Input label="Password" type="password" name="password" />
         </FormElement>
         <Button :disabled="isSubmitting" type="submit">Submit</Button>

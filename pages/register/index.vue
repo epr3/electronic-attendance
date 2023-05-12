@@ -71,30 +71,30 @@ const onSubmit = handleSubmit(async (values) => {
       <h4 class="text-2xl font-bold">Enroll Now</h4>
       <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
         <div class="flex space-x-4">
-          <FormElement :error="errors.firstName">
+          <FormElement name="firstName">
             <Input label="First Name" name="firstName" />
           </FormElement>
 
-          <FormElement :error="errors.lastName">
+          <FormElement name="lastName">
             <Input label="Last Name" name="lastName" />
           </FormElement>
         </div>
-        <FormElement :error="errors.email">
+        <FormElement name="email">
           <Input label="Email" type="email" name="email" />
         </FormElement>
 
-        <FormElement :error="errors.telephone">
+        <FormElement name="telephone">
           <Input label="Telephone" type="telephone" name="telephone" />
         </FormElement>
 
-        <FormElement :error="errors.password">
+        <FormElement name="password">
           <Input label="Password" type="password" name="password" />
         </FormElement>
-        <FormElement :error="errors.schoolName">
+        <FormElement name="schoolName">
           <Input label="School Name" name="schoolName" />
         </FormElement>
 
-        <FormElement :error="errors.schoolAcronym">
+        <FormElement name="schoolAcronym">
           <Input label="School Acronym" name="schoolAcronym" />
         </FormElement>
         <Button :disabled="isSubmitting" type="submit">Submit</Button>

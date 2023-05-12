@@ -95,22 +95,22 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
     <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
       <div class="flex space-x-4">
-        <FormElement :error="errors.firstName">
+        <FormElement name="firstName">
           <Input label="First Name" name="firstName" />
         </FormElement>
 
-        <FormElement :error="errors.lastName">
+        <FormElement name="lastName">
           <Input label="Last Name" name="lastName" />
         </FormElement>
       </div>
-      <FormElement :error="errors.email">
+      <FormElement name="email">
         <Input label="Email" type="email" name="email" />
       </FormElement>
 
-      <FormElement :error="errors.telephone">
+      <FormElement name="telephone">
         <Input label="Telephone" type="telephone" name="telephone" />
       </FormElement>
-      <FormElement :error="errors.role">
+      <FormElement name="role">
         <Select label="Role" name="role" placeholder="Select role">
           <option
             v-for="role in Object.values(ROLE).filter(

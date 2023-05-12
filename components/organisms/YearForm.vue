@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { RRule, RRuleSet, datetime } from "rrule";
+import { RRule, datetime } from "rrule";
 import { array, string, object } from "zod";
 
 const { $dayjs } = useNuxtApp();
@@ -7,7 +7,7 @@ const steps = ["Select dates", "Select holidays", "Verify dates"];
 
 const initialValues: Record<
   string,
-  string | { startDate: string; endDate: string }[]
+  string | { name: string; startDate: string; endDate: string }[]
 >[] = [
   {
     startDate: $dayjs().format("YYYY-MM-DD"),
@@ -16,6 +16,7 @@ const initialValues: Record<
   {
     holidays: [
       {
+        name: "Example Holiday",
         startDate: $dayjs().format("YYYY-MM-DD"),
         endDate: $dayjs().add(1, "d").format("YYYY-MM-DD"),
       },
@@ -32,6 +33,7 @@ const schemas = [
   object({
     holidays: array(
       object({
+        name: string().min(1),
         startDate: string().min(1),
         endDate: string().min(1),
       })
@@ -59,30 +61,30 @@ function onSubmit(values: Record<string, any>) {
   });
 
   const holidayRrules = values.holidays.map(
-    (item: { startDate: string; endDate: string }) => {
+    (item: { startDate: string; endDate: string; name: string }) => {
       const startDateDayJs = $dayjs(item.startDate);
       const endDateDayjs = $dayjs(item.endDate);
 
-      return new RRule({
-        freq: RRule.DAILY,
-        dtstart: datetime(
-          startDateDayJs.year(),
-          startDateDayJs.month(),
-          startDateDayJs.day()
-        ),
-        until: datetime(
-          endDateDayjs.year(),
-          endDateDayjs.month(),
-          endDateDayjs.day()
-        ),
-      });
+      return {
+        name: item.name,
+        rrule: new RRule({
+          freq: RRule.DAILY,
+          dtstart: datetime(
+            startDateDayJs.year(),
+            startDateDayJs.month(),
+            startDateDayJs.day()
+          ),
+          until: datetime(
+            endDateDayjs.year(),
+            endDateDayjs.month(),
+            endDateDayjs.day()
+          ),
+        }).toString(),
+      };
     }
   );
 
-  console.log(
-    yearRule.toString(),
-    holidayRrules.map((item) => item.toString())
-  );
+  console.log(yearRule.toString(), holidayRrules);
 }
 </script>
 

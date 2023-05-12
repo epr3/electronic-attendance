@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { merge, cloneDeep } from "lodash-es";
 import { ZodRawShape, ZodObject } from "zod";
 
 const props = defineProps<{
@@ -45,7 +46,7 @@ const currentInitialValues = computed(() => {
 // and to submit the form if its the last step
 const { values, handleSubmit, resetForm } = useForm({
   // vee-validate will be aware of computed schema changes
-  validationSchema: currentSchema.value,
+  validationSchema: currentSchema,
   // initialValues: {},
   // turn this on so each step values won't get removed when you move back or to the next step
   keepValuesOnUnmount: true,
@@ -63,7 +64,7 @@ watch(
   currentStepIdx,
   () => {
     resetForm({
-      values: { ...currentInitialValues.value, ...values },
+      values: merge(currentInitialValues.value, cloneDeep(values)),
     });
   },
 

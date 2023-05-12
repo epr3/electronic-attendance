@@ -82,7 +82,7 @@ const onSubmit = handleSubmit(async (values) => {
       <h2 class="text-2xl font-bold">New subject</h2>
     </div>
     <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
-      <FormElement :error="errors.name">
+      <FormElement name="name">
         <Input label="Name" name="name" />
       </FormElement>
       <Button :disabled="isSubmitting" type="submit">Submit</Button>
