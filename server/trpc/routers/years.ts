@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { object, string, number } from "zod";
+import { object, string, number, array } from "zod";
 
 import {
   router,
@@ -35,7 +35,9 @@ export const yearRouter = router({
     .input(
       object({
         schoolDateRule: string().min(1),
-        holidayDateRule: string().min(1),
+        holidayDateRules: array(
+          object({ name: string(), rule: string().min(1) })
+        ),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -50,12 +52,20 @@ export const yearRouter = router({
       }
 
       try {
-        await ctx.prisma.schoolYear.create({
-          data: {
-            schoolDateRule: input.schoolDateRule,
-            holidayDateRule: input.holidayDateRule,
-            schoolId: input.schoolId,
-          },
+        await ctx.prisma.$transaction(async (tx) => {
+          const schoolYear = await tx.schoolYear.create({
+            data: {
+              schoolId: input.schoolId,
+              schoolDateRule: input.schoolDateRule,
+            },
+          });
+          await tx.schoolYearHolidays.createMany({
+            data: input.holidayDateRules.map((item) => ({
+              schoolYearId: schoolYear.id,
+              name: item.name,
+              holidayDateRule: item.rule,
+            })),
+          });
         });
       } catch (e) {
         throw new TRPCError({
@@ -68,7 +78,9 @@ export const yearRouter = router({
     .input(
       object({
         schoolDateRule: string().min(1),
-        holidayDateRule: string().min(1),
+        holidayDateRules: array(
+          object({ name: string(), rule: string().min(1) })
+        ),
         yearId: string().uuid(),
       })
     )
@@ -84,12 +96,23 @@ export const yearRouter = router({
       }
 
       try {
-        await ctx.prisma.schoolYear.update({
-          data: {
-            schoolDateRule: input.schoolDateRule,
-            holidayDateRule: input.holidayDateRule,
-          },
-          where: { id: input.yearId },
+        await ctx.prisma.$transaction(async (tx) => {
+          await tx.schoolYear.update({
+            data: {
+              schoolDateRule: input.schoolDateRule,
+            },
+            where: { id: input.yearId },
+          });
+
+          await tx.schoolYearHolidays.updateMany({
+            data: input.holidayDateRules.map((item) => ({
+              name: item.name,
+              holidayDateRule: item.rule,
+            })),
+            where: {
+              schoolYearId: input.yearId,
+            },
+          });
         });
       } catch (e) {
         throw new TRPCError({
@@ -112,11 +135,14 @@ export const yearRouter = router({
       }
 
       try {
-        const subject = await ctx.prisma.schoolYear.findFirstOrThrow({
+        const schoolYear = await ctx.prisma.schoolYear.findFirstOrThrow({
           where: { schoolId: input.schoolId, id: input.yearId },
+          include: {
+            holidays: true,
+          },
         });
 
-        return subject;
+        return schoolYear;
       } catch (e) {
         throw new TRPCError({
           message: JSON.stringify(e),
@@ -150,7 +176,9 @@ export const yearRouter = router({
             where: {
               schoolId: input.schoolId,
             },
-
+            include: {
+              holidays: true,
+            },
             take: pageSize,
             skip: (page - 1) * pageSize,
           }),

@@ -1,9 +1,4 @@
-<script lang="ts" setup>
-const currentDate = ref("");
-function selectDate(date: string) {
-  currentDate.value = date;
-}
-</script>
+<script lang="ts" setup></script>
 
 <template>
   <div>
