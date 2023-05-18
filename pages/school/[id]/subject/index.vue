@@ -23,7 +23,9 @@ const columnHeaders = [{ name: "Name", value: "name" }] as {
 
 <template>
   <div class="flex flex-col gap-4">
-    <Button class="self-start" to="subject/new"> Add subject </Button>
+    <Button color="success" class="self-start" to="subject/new">
+      Add subject
+    </Button>
     <Table full-width>
       <thead>
         <TableRow>
@@ -49,6 +51,7 @@ const columnHeaders = [{ name: "Name", value: "name" }] as {
                   <div class="i-heroicons-pencil-square w-6 h-6" />
                 </IconButton>
                 <IconButton
+                  color="error"
                   @click="
                     () => {
                       subjectId = row.id;

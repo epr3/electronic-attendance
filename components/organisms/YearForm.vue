@@ -2,7 +2,8 @@
 import { RRule, datetime } from "rrule";
 import { array, string, object } from "zod";
 
-const { $dayjs } = useNuxtApp();
+const route = useRoute();
+const { $dayjs, $client } = useNuxtApp();
 const steps = ["Select dates", "Select holidays", "Verify dates"];
 
 const initialValues: Record<
@@ -42,7 +43,7 @@ const schemas = [
   object({}),
 ];
 
-function onSubmit(values: Record<string, any>) {
+async function onSubmit(values: Record<string, any>) {
   const startDateDayJs = $dayjs(values.startDate);
   const endDateDayjs = $dayjs(values.endDate);
 
@@ -84,7 +85,13 @@ function onSubmit(values: Record<string, any>) {
     }
   );
 
-  console.log(yearRule.toString(), holidayRrules);
+  await $client.year.addYear.mutate({
+    schoolId: route.params.id as string,
+    schoolDateRule: yearRule.toString(),
+    holidayDateRules: holidayRrules,
+  });
+
+  await navigateTo(`/school/${route.params.id}/year`);
 }
 </script>
 

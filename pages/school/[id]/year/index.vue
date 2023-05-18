@@ -4,7 +4,11 @@ const route = useRoute();
 
 <template>
   <div class="flex flex-col gap-4">
-    <Button class="self-start" :to="`/school/${route.params.id}/year/new`">
+    <Button
+      color="success"
+      class="self-start"
+      :to="`/school/${route.params.id}/year/new`"
+    >
       Add year
     </Button>
     <!-- <Table full-width>

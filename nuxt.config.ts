@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
 export default defineNuxtConfig({
   typescript: {
     shim: false,
@@ -36,6 +37,12 @@ export default defineNuxtConfig({
       collections: {
         heroicons: () =>
           import("@iconify-json/heroicons/icons.json").then((i) => i.default),
+      },
+    },
+    webFonts: {
+      provider: "google",
+      fonts: {
+        sans: "Inter",
       },
     },
   },
