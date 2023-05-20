@@ -1,5 +1,7 @@
 <template>
-  <div class="h-screen w-screen bg-blue-100 flex justify-center items-center">
+  <div
+    class="h-screen w-screen px-lg py-xl bg-brand-shade-dark flex justify-center items-center"
+  >
     <slot />
   </div>
 </template>

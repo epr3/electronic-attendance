@@ -9,11 +9,14 @@ withDefaults(
   <div
     class="border-t-4 text-xs grow py-2 cursor-pointer"
     :class="{
-      'border-blue-500': active,
-      'border-gray-200': !active,
+      'border-brand-accent-dark': active,
+      'border-gray-3': !active,
     }"
   >
-    <p :class="{ 'text-gray-7': !active, 'text-blue-500': active }">
+    <p
+      class="font-bold"
+      :class="{ 'text-gray-7': !active, 'text-brand-accent-dark': active }"
+    >
       Step {{ step }}
     </p>
 

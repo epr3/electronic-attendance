@@ -13,7 +13,7 @@ defineEmits<{ (e: "step:select", step: number): void }>();
 </script>
 
 <template>
-  <div class="bg-white space-x-4 flex py-4">
+  <div class="space-x-4 flex py-4">
     <Step
       v-for="(step, i) in steps"
       :key="step"

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { merge, cloneDeep } from "lodash-es";
-import { ZodRawShape, ZodObject } from "zod";
+import { ZodType } from "zod";
 
 const props = defineProps<{
-  validationSchema: ZodObject<ZodRawShape>[];
+  validationSchema: ZodType[];
   initialValues: Record<
     string,
     string | { startDate: string; endDate: string }[]

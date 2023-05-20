@@ -57,9 +57,9 @@ function decrementMonth() {
         class="i-heroicons-chevron-left w-4 h-4 cursor-pointer"
         @click="decrementMonth"
       />
-      <div class="flex gap-4">
+      <div class="flex gap-2">
         <Select name="month">
-          <option v-for="i in 11" :key="`month-${i - 1}`" :value="i - 1">
+          <option v-for="i in 12" :key="`month-${i - 1}`" :value="i - 1">
             {{
               $dayjs()
                 .month(i - 1)
@@ -94,7 +94,7 @@ function decrementMonth() {
       <div
         v-for="day in weekDays"
         :key="day"
-        class="p-2 border-b border-gray-300"
+        class="p-2 border-b border-brand-shade-light"
       >
         {{ day }}
       </div>
@@ -108,9 +108,10 @@ function decrementMonth() {
       <div
         v-for="i in endOfMonth.date()"
         :key="`month-day-${i}`"
-        class="p-2 border border-gray-300 flex items-center justify-center cursor-pointer hover:(bg-blue-300 text-white)"
+        v-close-popper="true"
+        class="p-2 border border-gray-300 flex items-center justify-center cursor-pointer hover:(bg-brand-shade-dark text-white)"
         :class="{
-          'bg-blue-300 text-white': computeSameDay(i),
+          'bg-brand-shade-dark text-white': computeSameDay(i),
           'bg-white': !computeSameDay(i),
         }"
         @click="

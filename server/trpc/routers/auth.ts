@@ -102,6 +102,7 @@ export const authRouter = router({
 
       ctx.session.user = user;
       await ctx.session.save();
+      return null;
     }),
 });
 

@@ -6,6 +6,17 @@ const route = useRoute();
 const { $dayjs, $client } = useNuxtApp();
 const steps = ["Select dates", "Select holidays", "Verify dates"];
 
+let year = null;
+
+if (route.params.yearId) {
+  year = await $client.year.getYear.query({
+    schoolId: route.params.id as string,
+    yearId: route.params.yearId as string,
+  });
+}
+
+console.log(year);
+
 const initialValues: Record<
   string,
   string | { name: string; startDate: string; endDate: string }[]
@@ -30,7 +41,7 @@ const schemas = [
   object({
     startDate: string().min(1),
     endDate: string().min(1),
-  }),
+  }).refine(() => true, { message: "The dates selected are not valid." }),
   object({
     holidays: array(
       object({
@@ -44,50 +55,62 @@ const schemas = [
 ];
 
 async function onSubmit(values: Record<string, any>) {
-  const startDateDayJs = $dayjs(values.startDate);
-  const endDateDayjs = $dayjs(values.endDate);
-
-  const yearRule = new RRule({
+  const startDate = $dayjs(values.startDate).utc();
+  const endDate = $dayjs(values.endDate).utc();
+  const schedule = new RRule({
     freq: RRule.DAILY,
     dtstart: datetime(
-      startDateDayJs.year(),
-      startDateDayJs.month(),
-      startDateDayJs.day()
+      startDate.year(),
+      startDate.month() + 1,
+      startDate.date(),
+      startDate.hour(),
+      startDate.minute(),
+      0
     ),
     until: datetime(
-      endDateDayjs.year(),
-      endDateDayjs.month(),
-      endDateDayjs.day()
+      endDate.year(),
+      endDate.month() + 1,
+      endDate.date(),
+      endDate.hour(),
+      endDate.minute(),
+      0
     ),
   });
 
   const holidayRrules = values.holidays.map(
     (item: { startDate: string; endDate: string; name: string }) => {
-      const startDateDayJs = $dayjs(item.startDate);
-      const endDateDayjs = $dayjs(item.endDate);
+      const startDate = $dayjs(item.startDate).utc();
+      const endDate = $dayjs(item.endDate).utc();
+      const schedule = new RRule({
+        freq: RRule.DAILY,
+        dtstart: datetime(
+          startDate.year(),
+          startDate.month() + 1,
+          startDate.date(),
+          startDate.hour(),
+          startDate.minute(),
+          0
+        ),
+        until: datetime(
+          endDate.year(),
+          endDate.month() + 1,
+          endDate.date(),
+          endDate.hour(),
+          endDate.minute(),
+          0
+        ),
+      });
 
       return {
         name: item.name,
-        rrule: new RRule({
-          freq: RRule.DAILY,
-          dtstart: datetime(
-            startDateDayJs.year(),
-            startDateDayJs.month(),
-            startDateDayJs.day()
-          ),
-          until: datetime(
-            endDateDayjs.year(),
-            endDateDayjs.month(),
-            endDateDayjs.day()
-          ),
-        }).toString(),
+        rule: schedule.toString(),
       };
     }
   );
 
   await $client.year.addYear.mutate({
     schoolId: route.params.id as string,
-    schoolDateRule: yearRule.toString(),
+    schoolDateRule: schedule.toString(),
     holidayDateRules: holidayRrules,
   });
 
@@ -104,7 +127,7 @@ async function onSubmit(values: Record<string, any>) {
     @submit="onSubmit"
   >
     <FormStep>
-      <div class="flex gap-4">
+      <div class="gap-4 grid grid-cols-1 lg:grid-cols-2">
         <DateSelect label="Start date" class="grow" name="startDate" />
         <DateSelect label="End date" class="grow" name="endDate" />
       </div>

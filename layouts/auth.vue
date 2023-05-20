@@ -16,7 +16,7 @@ const user = computed(() =>
 </script>
 
 <template>
-  <div class="px-8 py-32 bg-blue-100 min-h-screen">
+  <div class="px-lg py-xl bg-brand-shade-dark min-h-screen">
     <ProfileMenu v-if="user" :user="user" />
     <slot />
   </div>

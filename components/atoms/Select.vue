@@ -10,7 +10,7 @@ const { value } = useField(() => props.name, undefined);
 
 <template>
   <label
-    v-if="name"
+    v-if="label"
     class="block text-sm font-medium text-gray-700"
     :for="name"
   >
@@ -20,7 +20,7 @@ const { value } = useField(() => props.name, undefined);
     <select
       :id="name"
       v-model="value"
-      class="relative w-full min-w-[100px] border border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 appearance-none bg-transparent"
+      class="relative w-full min-w-[120px] border border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 appearance-none bg-transparent"
       :name="name"
     >
       <option v-if="placeholder" value="">{{ placeholder }}</option>

@@ -98,7 +98,6 @@ const onSubmit = handleSubmit(async (values) => {
         <FormElement name="firstName">
           <Input label="First Name" name="firstName" />
         </FormElement>
-
         <FormElement name="lastName">
           <Input label="Last Name" name="lastName" />
         </FormElement>

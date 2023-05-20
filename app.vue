@@ -1,6 +1,6 @@
 <template>
   <ModalContext>
-    <NuxtLayout>
+    <NuxtLayout class="font-sans">
       <NuxtPage />
     </NuxtLayout>
   </ModalContext>

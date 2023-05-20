@@ -36,7 +36,7 @@ export const yearRouter = router({
       object({
         schoolDateRule: string().min(1),
         holidayDateRules: array(
-          object({ name: string(), rule: string().min(1) })
+          object({ name: string().min(1), rule: string().min(1) })
         ),
       })
     )

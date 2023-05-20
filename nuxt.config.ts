@@ -10,8 +10,6 @@ export default defineNuxtConfig({
     transpile: ["trpc-nuxt"],
   },
 
-  plugins: ["~/plugins/dayjs", "~/plugins/trpc"],
-
   components: {
     dirs: [
       {
@@ -26,8 +24,8 @@ export default defineNuxtConfig({
     "@nuxtjs/eslint-module",
     "@unocss/nuxt",
     "@vueuse/nuxt",
-    "@vee-validate/nuxt",
     "nuxt-iron-session",
+    "@vee-validate/nuxt",
   ],
 
   unocss: {
@@ -42,7 +40,7 @@ export default defineNuxtConfig({
     webFonts: {
       provider: "google",
       fonts: {
-        sans: "Inter",
+        sans: "DM Sans",
       },
     },
   },

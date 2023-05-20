@@ -1,3 +1,3 @@
 <template>
-  <p>YearId</p>
+  <p>Details</p>
 </template>

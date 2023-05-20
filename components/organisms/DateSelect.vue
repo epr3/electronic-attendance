@@ -6,7 +6,7 @@ const { value, setValue } = useField<string>(() => props.name, undefined);
 <template>
   <div class="relative flex flex-col items-center gap-4">
     <FormElement :name="name">
-      <Input :label="label" :name="name" placeholder="YYYY-MM-DD">
+      <Input :label="label" :name="name" placeholder="yyyy-MM-DD">
         <template #right-icon>
           <VDropdown>
             <div class="i-heroicons-calendar w-4 h-4 cursor-pointer" />
