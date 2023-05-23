@@ -1,17 +1,16 @@
-import { ROLE, SchoolUser, TOKEN_TYPE, User } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { object, string, number, nativeEnum } from "zod";
+import { object, string, number, array } from "zod";
 
 import {
   router,
-  schoolProcedure,
+  yearProcedure,
   getSchool,
   checkIfUserAuthorized,
 } from "../trpc";
 
-export const userRouter = router({
-  deleteUser: schoolProcedure
-    .input(object({ userId: string().uuid() }))
+export const classRouter = router({
+  deleteClass: yearProcedure
+    .input(object({ classId: string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const school = await getSchool(input.schoolId, ctx.prisma);
       const isAuthorized = checkIfUserAuthorized(ctx.user, school);
@@ -24,7 +23,7 @@ export const userRouter = router({
       }
 
       try {
-        await ctx.prisma.user.delete({ where: { id: input.userId } });
+        await ctx.prisma.class.delete({ where: { id: input.classId } });
       } catch (e) {
         throw new TRPCError({
           message: JSON.stringify(e),
@@ -32,14 +31,12 @@ export const userRouter = router({
         });
       }
     }),
-  addUser: schoolProcedure
+  addClass: yearProcedure
     .input(
       object({
-        firstName: string().min(1),
-        lastName: string().min(1),
-        email: string().email(),
-        role: nativeEnum(ROLE),
-        telephone: string().min(1),
+        title: string().min(1),
+        headTeacherId: string().uuid(),
+        students: array(string().uuid()),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -54,90 +51,38 @@ export const userRouter = router({
       }
 
       try {
-        await ctx.prisma.$transaction(async (tx) => {
-          const user = await tx.user.create({
+        return await ctx.prisma.$transaction(async (tx) => {
+          const group = await tx.class.create({
             data: {
-              firstName: input.firstName,
-              lastName: input.lastName,
-              email: input.email,
-              telephone: input.telephone,
-            },
-          });
-          await tx.token.create({
-            data: {
-              email: input.email,
-              tokenType: TOKEN_TYPE.RESET_PASSWORD,
-            },
-          });
-
-          await tx.schoolUser.create({
-            data: {
+              title: input.title,
+              headTeacherId: input.headTeacherId,
+              isActive: true,
               schoolId: input.schoolId,
-              userId: user.id,
-              role: input.role,
+              schoolYearId: input.yearId,
             },
           });
-        });
-      } catch (e) {
-        throw new TRPCError({
-          message: JSON.stringify(e),
-          code: "INTERNAL_SERVER_ERROR",
-        });
-      }
-    }),
-  editUser: schoolProcedure
-    .input(
-      object({
-        userId: string().uuid(),
-        firstName: string().min(1),
-        lastName: string().min(1),
-        email: string().email(),
-        role: nativeEnum(ROLE),
-        telephone: string().min(1),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const school = await getSchool(input.schoolId, ctx.prisma);
-      const isAuthorized = checkIfUserAuthorized(ctx.user, school);
 
-      if (!isAuthorized) {
-        return new TRPCError({
-          code: "FORBIDDEN",
-          message: "You are not authorized for this action",
-        });
-      }
+          await tx.classStudent.createMany({
+            data: input.students.map((item) => ({
+              studentId: item,
+              classId: group.id,
+            })),
+          });
 
-      try {
-        const result: { schoolUser: SchoolUser; user: User } =
-          await ctx.prisma.$transaction(async (tx) => {
-            const user = await tx.user.update({
-              where: {
-                id: input.userId,
-              },
-              data: {
-                firstName: input.firstName,
-                lastName: input.lastName,
-                email: input.email,
-                telephone: input.telephone,
-              },
-            });
-
-            const schoolUser = await tx.schoolUser.update({
-              where: {
-                schoolId_userId: {
-                  userId: input.userId,
-                  schoolId: input.schoolId,
+          const classWithStudents = await tx.class.findFirstOrThrow({
+            where: { id: group.id },
+            include: {
+              headTeacher: true,
+              students: {
+                include: {
+                  student: true,
                 },
               },
-              data: {
-                role: input.role,
-              },
-            });
-
-            return { schoolUser, user };
+            },
           });
 
-        return { ...result.user, role: result.schoolUser.role };
+          return classWithStudents;
+        });
       } catch (e) {
         throw new TRPCError({
           message: JSON.stringify(e),
@@ -145,8 +90,73 @@ export const userRouter = router({
         });
       }
     }),
-  getUser: schoolProcedure
-    .input(object({ userId: string().uuid() }))
+  editClass: yearProcedure
+    .input(
+      object({
+        classId: string().uuid(),
+        title: string().min(1),
+        headTeacherId: string().uuid(),
+        students: array(string().uuid()),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const school = await getSchool(input.schoolId, ctx.prisma);
+      const isAuthorized = checkIfUserAuthorized(ctx.user, school);
+
+      if (!isAuthorized) {
+        return new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not authorized for this action",
+        });
+      }
+
+      try {
+        return await ctx.prisma.$transaction(async (tx) => {
+          const group = await tx.class.update({
+            where: {
+              id: input.classId,
+            },
+            data: {
+              title: input.title,
+              headTeacherId: input.headTeacherId,
+              isActive: true,
+              schoolId: input.schoolId,
+              schoolYearId: input.yearId,
+            },
+          });
+
+          await tx.classStudent.deleteMany({ where: { classId: group.id } });
+
+          await tx.classStudent.createMany({
+            data: input.students.map((item) => ({
+              studentId: item,
+              classId: group.id,
+            })),
+          });
+
+          const classWithStudents = await tx.class.findFirstOrThrow({
+            where: { id: group.id },
+            include: {
+              headTeacher: true,
+              students: {
+                include: {
+                  student: true,
+                },
+              },
+            },
+          });
+
+          return classWithStudents;
+        });
+      } catch (e) {
+        throw new TRPCError({
+          message: JSON.stringify(e),
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    }),
+  getClass: yearProcedure
+    .input(object({ classId: string().uuid() }))
     .query(async ({ ctx, input }) => {
       const school = await getSchool(input.schoolId, ctx.prisma);
       const isAuthorized = checkIfUserAuthorized(ctx.user, school);
@@ -159,21 +169,19 @@ export const userRouter = router({
       }
 
       try {
-        const schoolUser = await ctx.prisma.schoolUser.findFirstOrThrow({
-          where: {
-            userId: input.userId,
-            schoolId: input.schoolId,
+        const classWithStudents = await ctx.prisma.class.findFirstOrThrow({
+          where: { id: input.classId },
+          include: {
+            headTeacher: true,
+            students: {
+              include: {
+                student: true,
+              },
+            },
           },
-          include: { user: true },
         });
 
-        return {
-          firstName: schoolUser.user.firstName,
-          lastName: schoolUser.user.lastName,
-          email: schoolUser.user.email,
-          telephone: schoolUser.user.telephone,
-          role: schoolUser.role,
-        };
+        return classWithStudents;
       } catch (e) {
         throw new TRPCError({
           message: JSON.stringify(e),
@@ -181,12 +189,11 @@ export const userRouter = router({
         });
       }
     }),
-  getUsers: schoolProcedure
+  getClasses: yearProcedure
     .input(
       object({
         page: number().min(1).optional(),
         pageSize: number().min(12).optional(),
-        role: nativeEnum(ROLE).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -202,33 +209,32 @@ export const userRouter = router({
 
       const page = input.page ?? 1;
       const pageSize = input.pageSize ?? 12;
-
-      let roleObject = {};
-
-      if (input.role) {
-        roleObject = { role: input.role };
-      }
       try {
-        const [users, count] = await Promise.all([
-          ctx.prisma.schoolUser.findMany({
+        const [classes, count] = await Promise.all([
+          ctx.prisma.class.findMany({
             where: {
               schoolId: input.schoolId,
-              NOT: [{ userId: { equals: ctx.user.id } }],
-              ...roleObject,
+              schoolYearId: input.yearId,
             },
-            include: { user: true },
+            include: {
+              headTeacher: true,
+              _count: {
+                select: {
+                  students: true,
+                },
+              },
+            },
             take: pageSize,
             skip: (page - 1) * pageSize,
           }),
-          ctx.prisma.schoolUser.count({
+          ctx.prisma.class.count({
             where: {
               schoolId: input.schoolId,
-              NOT: [{ userId: { equals: ctx.user.id } }],
-              ...roleObject,
+              schoolYearId: input.yearId,
             },
           }),
         ]);
-        return { users, count };
+        return { classes, count };
       } catch (e) {
         throw new TRPCError({
           message: JSON.stringify(e),
@@ -239,4 +245,4 @@ export const userRouter = router({
 });
 
 // export type definition of API
-export type UserRouter = typeof userRouter;
+export type ClassRouter = typeof classRouter;

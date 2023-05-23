@@ -3,9 +3,11 @@ import { protectedProcedure, router } from "../trpc";
 import { userRouter } from "./user";
 import { authRouter } from "./auth";
 import { subjectRouter } from "./subject";
-import { yearRouter } from "./years";
+import { yearRouter } from "./year";
+import { classRouter } from "./class";
 
 export const appRouter = router({
+  class: classRouter,
   auth: authRouter,
   user: userRouter,
   subject: subjectRouter,

@@ -1,36 +1,38 @@
 <script lang="ts" setup>
-import { rrulestr } from "rrule";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
-const { $client, $dayjs } = useNuxtApp();
+const { $client } = useNuxtApp();
 const route = useRoute();
-const { data, refresh } = await $client.year.getYears.useQuery({
+const { data, refresh } = await $client.class.getClasses.useQuery({
   schoolId: route.params.id as string,
+  yearId: route.params.yearId as string,
   page: parseInt((route.query.page as string) ?? 1, 10),
   pageSize: parseInt((route.query.pageSize as string) ?? 12, 10),
 });
 
-const years = computed(() =>
-  data.value
-    ? data.value.years.map((item) => {
-        const rRule = rrulestr(item.schoolDateRule);
-        return {
-          id: item.id,
-          startDate: $dayjs(rRule.options.dtstart).format("YYYY-MM-DD"),
-          endDate: $dayjs(rRule.options.until).format("YYYY-MM-DD"),
-        };
-      })
-    : []
-);
+console.log(data.value?.classes);
 
-const yearId = ref("");
+// const years = computed(() =>
+//   data.value
+//     ? data.value.years.map((item) => {
+//         const rRule = rrulestr(item.schoolDateRule);
+//         return {
+//           id: item.id,
+//           startDate: $dayjs(rRule.options.dtstart).format("YYYY-MM-DD"),
+//           endDate: $dayjs(rRule.options.until).format("YYYY-MM-DD"),
+//         };
+//       })
+//     : []
+// );
+
+const classId = ref("");
 
 const columnHeaders = [
-  { name: "Start Date", value: "startDate" },
-  { name: "End Date", value: "endDate" },
-  // { name: "Holidays", value: "email" },
+  { name: "Class Title", value: "title" },
+  { name: "Head Teacher", value: "headTeacher" },
+  { name: "No of students", value: "noOfStudents" },
 ];
 </script>
 
@@ -39,11 +41,11 @@ const columnHeaders = [
     <Button
       color="success"
       class="self-start"
-      :to="`/school/${route.params.id}/year/new`"
+      :to="`/school/${route.params.id}/year/${route.params.yearId}/details/classes/new`"
     >
-      Add year
+      Add class
     </Button>
-    <Table full-width>
+    <!--  <Table full-width>
       <thead>
         <TableRow>
           <TableHeadCell v-for="column in columnHeaders" :key="column.name">
@@ -134,6 +136,7 @@ const columnHeaders = [
           </Button>
         </ModalFooter>
       </ModalContent>
-    </Modal>
+    </Modal> -->
+    <p>Classes</p>
   </div>
 </template>

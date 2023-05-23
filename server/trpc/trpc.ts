@@ -53,6 +53,12 @@ export const schoolProcedure = protectedProcedure.input(
   object({ schoolId: string().uuid() })
 );
 
+export const yearProcedure = schoolProcedure.input(
+  object({
+    yearId: string().uuid(),
+  })
+);
+
 export const getSchool = async (schoolId: string, prisma: PrismaClient) => {
   const school = await prisma.school.findFirstOrThrow({
     where: { id: schoolId },
