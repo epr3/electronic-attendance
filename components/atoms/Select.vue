@@ -16,11 +16,11 @@ const { value } = useField(() => props.name, undefined);
   >
     {{ label }}
   </label>
-  <div class="relative shadow-sm rounded-md mt-1">
+  <div class="relative shadow-sm mt-1 bg-white">
     <select
       :id="name"
       v-model="value"
-      class="relative w-full min-w-[120px] border border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 appearance-none bg-transparent"
+      class="relative rounded w-full min-w-[120px] border border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 appearance-none bg-transparent"
       :name="name"
     >
       <option v-if="placeholder" value="">{{ placeholder }}</option>

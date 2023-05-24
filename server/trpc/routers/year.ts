@@ -23,7 +23,9 @@ export const yearRouter = router({
       }
 
       try {
-        await ctx.prisma.schoolYear.delete({ where: { id: input.yearId } });
+        await ctx.prisma.schoolYear.delete({
+          where: { id: input.yearId },
+        });
       } catch (e) {
         throw new TRPCError({
           message: JSON.stringify(e),
@@ -104,14 +106,18 @@ export const yearRouter = router({
             where: { id: input.yearId },
           });
 
-          await tx.schoolYearHolidays.updateMany({
-            data: input.holidayDateRules.map((item) => ({
-              name: item.name,
-              holidayDateRule: item.rule,
-            })),
+          await tx.schoolYearHolidays.deleteMany({
             where: {
               schoolYearId: input.yearId,
             },
+          });
+
+          await tx.schoolYearHolidays.createMany({
+            data: input.holidayDateRules.map((item) => ({
+              name: item.name,
+              holidayDateRule: item.rule,
+              schoolYearId: input.yearId,
+            })),
           });
         });
       } catch (e) {

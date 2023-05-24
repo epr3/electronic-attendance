@@ -181,6 +181,116 @@ export const userRouter = router({
         });
       }
     }),
+  getNonAssignedStudents: schoolProcedure
+    .input(
+      object({
+        page: number().min(1).optional(),
+        pageSize: number().min(12).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const school = await getSchool(input.schoolId, ctx.prisma);
+      const isAuthorized = checkIfUserAuthorized(ctx.user, school);
+
+      if (!isAuthorized) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not authorized for this action",
+        });
+      }
+
+      const page = input.page ?? 1;
+      const pageSize = input.pageSize ?? 12;
+
+      try {
+        const [users, count] = await Promise.all([
+          ctx.prisma.schoolUser.findMany({
+            where: {
+              schoolId: input.schoolId,
+              role: ROLE.STUDENT,
+              user: {
+                classes: {
+                  none: {},
+                },
+              },
+            },
+            include: { user: true },
+            take: pageSize,
+            skip: (page - 1) * pageSize,
+          }),
+          ctx.prisma.schoolUser.count({
+            where: {
+              schoolId: input.schoolId,
+              role: ROLE.STUDENT,
+              user: {
+                classes: {
+                  none: {},
+                },
+              },
+            },
+          }),
+        ]);
+        return { users, count };
+      } catch (e) {
+        throw new TRPCError({
+          message: JSON.stringify(e),
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    }),
+  getNonAssignedHeadTeachers: schoolProcedure
+    .input(
+      object({
+        page: number().min(1).optional(),
+        pageSize: number().min(12).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const school = await getSchool(input.schoolId, ctx.prisma);
+      const isAuthorized = checkIfUserAuthorized(ctx.user, school);
+
+      if (!isAuthorized) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not authorized for this action",
+        });
+      }
+
+      const page = input.page ?? 1;
+      const pageSize = input.pageSize ?? 12;
+
+      try {
+        const [users, count] = await Promise.all([
+          ctx.prisma.schoolUser.findMany({
+            where: {
+              schoolId: input.schoolId,
+              role: ROLE.TEACHER,
+              user: {
+                headTeacherClass: null,
+              },
+            },
+            include: { user: true },
+            take: pageSize,
+            skip: (page - 1) * pageSize,
+          }),
+          ctx.prisma.schoolUser.count({
+            where: {
+              schoolId: input.schoolId,
+              role: ROLE.TEACHER,
+              user: {
+                headTeacherClass: null,
+              },
+            },
+          }),
+        ]);
+        return { users, count };
+      } catch (e) {
+        throw new TRPCError({
+          message: JSON.stringify(e),
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    }),
   getUsers: schoolProcedure
     .input(
       object({

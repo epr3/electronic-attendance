@@ -64,10 +64,7 @@ const columnHeaders = [
 
             <TableCell>
               <div class="flex space-x-4">
-                <IconButton
-                  color="success"
-                  :to="`year/${row.id}/details/classes`"
-                >
+                <IconButton color="success" :to="`year/${row.id}/classes`">
                   <div class="i-heroicons-eye w-6 h-6" />
                 </IconButton>
                 <IconButton color="info" :to="`year/${row.id}`">

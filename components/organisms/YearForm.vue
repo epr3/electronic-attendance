@@ -1,12 +1,17 @@
 <script lang="ts" setup>
-import { RRule, datetime } from "rrule";
+import { SchoolYear, SchoolYearHolidays } from "@prisma/client";
+import { RRule, datetime, rrulestr } from "rrule";
 import { array, string, object } from "zod";
 
 const route = useRoute();
 const { $dayjs, $client } = useNuxtApp();
 const steps = ["Select dates", "Select holidays", "Verify dates"];
 
-let year = null;
+let year:
+  | (SchoolYear & {
+      holidays: SchoolYearHolidays[];
+    })
+  | null = null;
 
 if (route.params.yearId) {
   year = await $client.year.getYear.query({
@@ -15,26 +20,44 @@ if (route.params.yearId) {
   });
 }
 
-// TODO: ADD EDIT YEAR
-console.log(year);
-
 const initialValues: Record<
   string,
   string | { name: string; startDate: string; endDate: string }[]
 >[] = [
-  {
-    startDate: $dayjs().format("YYYY-MM-DD"),
-    endDate: $dayjs().add(1, "d").format("YYYY-MM-DD"),
-  },
-  {
-    holidays: [
-      {
-        name: "Example Holiday",
+  year
+    ? {
+        startDate: $dayjs(rrulestr(year.schoolDateRule).options.dtstart).format(
+          "YYYY-MM-DD"
+        ),
+        endDate: $dayjs(rrulestr(year.schoolDateRule).options.until).format(
+          "YYYY-MM-DD"
+        ),
+      }
+    : {
         startDate: $dayjs().format("YYYY-MM-DD"),
         endDate: $dayjs().add(1, "d").format("YYYY-MM-DD"),
       },
-    ],
-  },
+  year
+    ? {
+        holidays: year.holidays.map((item) => ({
+          name: item.name,
+          startDate: $dayjs(
+            rrulestr(item.holidayDateRule).options.dtstart
+          ).format("YYYY-MM-DD"),
+          endDate: $dayjs(rrulestr(item.holidayDateRule).options.until).format(
+            "YYYY-MM-DD"
+          ),
+        })),
+      }
+    : {
+        holidays: [
+          {
+            name: "Example Holiday",
+            startDate: $dayjs().format("YYYY-MM-DD"),
+            endDate: $dayjs().add(1, "d").format("YYYY-MM-DD"),
+          },
+        ],
+      },
   {},
 ];
 
@@ -108,12 +131,20 @@ async function onSubmit(values: Record<string, any>) {
       };
     }
   );
-
-  await $client.year.addYear.mutate({
-    schoolId: route.params.id as string,
-    schoolDateRule: schedule.toString(),
-    holidayDateRules: holidayRrules,
-  });
+  if (year) {
+    await $client.year.editYear.mutate({
+      yearId: year.id,
+      schoolId: route.params.id as string,
+      schoolDateRule: schedule.toString(),
+      holidayDateRules: holidayRrules,
+    });
+  } else {
+    await $client.year.addYear.mutate({
+      schoolId: route.params.id as string,
+      schoolDateRule: schedule.toString(),
+      holidayDateRules: holidayRrules,
+    });
+  }
 
   await navigateTo(`/school/${route.params.id}/year`);
 }

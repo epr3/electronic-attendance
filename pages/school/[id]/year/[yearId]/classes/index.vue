@@ -12,20 +12,18 @@ const { data, refresh } = await $client.class.getClasses.useQuery({
   pageSize: parseInt((route.query.pageSize as string) ?? 12, 10),
 });
 
-console.log(data.value?.classes);
-
-// const years = computed(() =>
-//   data.value
-//     ? data.value.years.map((item) => {
-//         const rRule = rrulestr(item.schoolDateRule);
-//         return {
-//           id: item.id,
-//           startDate: $dayjs(rRule.options.dtstart).format("YYYY-MM-DD"),
-//           endDate: $dayjs(rRule.options.until).format("YYYY-MM-DD"),
-//         };
-//       })
-//     : []
-// );
+const classes = computed(() =>
+  data.value
+    ? data.value.classes.map((item) => {
+        return {
+          id: item.id,
+          title: item.title,
+          headTeacher: `${item.headTeacher.firstName} ${item.headTeacher.lastName}`,
+          noOfStudents: item._count.students,
+        };
+      })
+    : []
+);
 
 const classId = ref("");
 
@@ -41,11 +39,11 @@ const columnHeaders = [
     <Button
       color="success"
       class="self-start"
-      :to="`/school/${route.params.id}/year/${route.params.yearId}/details/classes/new`"
+      :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/new`"
     >
       Add class
     </Button>
-    <!--  <Table full-width>
+    <Table full-width>
       <thead>
         <TableRow>
           <TableHeadCell v-for="column in columnHeaders" :key="column.name">
@@ -55,11 +53,11 @@ const columnHeaders = [
         </TableRow>
       </thead>
       <TableBody>
-        <template v-if="years.length">
-          <TableRow v-for="row in years" :key="row.id">
+        <template v-if="classes.length">
+          <TableRow v-for="row in classes" :key="row.id">
             <TableCell
               v-for="cell in columnHeaders"
-              :key="`cell-${cell}-${row.id}`"
+              :key="`cell-${cell.value}-${row.id}`"
             >
               {{ row[cell.value as keyof typeof row] }}
             </TableCell>
@@ -68,18 +66,22 @@ const columnHeaders = [
               <div class="flex space-x-4">
                 <IconButton
                   color="success"
-                  :to="`year/${row.id}/details/classes`"
+                  :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/subjects`"
                 >
-                  <div class="i-heroicons-eye w-6 h-6" />
+                  <div class="i-heroicons-academic-cap w-6 h-6" />
                 </IconButton>
-                <IconButton color="info" :to="`year/${row.id}`">
+
+                <IconButton
+                  color="info"
+                  :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}`"
+                >
                   <div class="i-heroicons-pencil-square w-6 h-6" />
                 </IconButton>
                 <IconButton
                   color="error"
                   @click="
                     () => {
-                      yearId = row.id;
+                      classId = row.id;
                       actions?.openModal();
                     }
                   "
@@ -112,11 +114,12 @@ const columnHeaders = [
             color="error"
             @click="
               async () => {
-                await $client.year.deleteYear.mutate({
+                await $client.class.deleteClass.mutate({
                   schoolId: route.params.id as string,
-                  yearId,
+                  yearId: route.params.yearId as string,
+                  classId,
                 });
-                yearId = '';
+                classId = '';
                 await refresh();
                 actions?.closeModal();
               }
@@ -127,7 +130,7 @@ const columnHeaders = [
           <Button
             @click="
               () => {
-                yearId = '';
+                classId = '';
                 actions?.closeModal();
               }
             "
@@ -136,7 +139,6 @@ const columnHeaders = [
           </Button>
         </ModalFooter>
       </ModalContent>
-    </Modal> -->
-    <p>Classes</p>
+    </Modal>
   </div>
 </template>

@@ -1,3 +1,3 @@
 <template>
-  <p>Schedule</p>
+  <p>Test</p>
 </template>
