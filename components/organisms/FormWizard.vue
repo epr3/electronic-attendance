@@ -2,14 +2,17 @@
 import { merge, cloneDeep } from "lodash-es";
 import { ZodType } from "zod";
 
-const props = defineProps<{
-  validationSchema: ZodType[];
-  initialValues: Record<
-    string,
-    string | { startDate: string; endDate: string }[]
-  >[];
-  steps: string[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    validationSchema: ZodType[];
+    initialValues: Record<
+      string,
+      string | { startDate: string; endDate: string }[]
+    >[];
+    steps?: string[];
+  }>(),
+  { steps: () => [] }
+);
 
 const emit = defineEmits<{
   (e: "submit", values: Record<string, any>): void;
@@ -87,7 +90,7 @@ const onSubmit = handleSubmit(() => {
 
 <template>
   <div class="flex flex-col gap-8">
-    <Steps :steps="steps" :active-index="currentStepIdx" />
+    <Steps v-if="steps.length" :steps="steps" :active-index="currentStepIdx" />
     <form novalidate class="flex flex-col gap-4" @submit="onSubmit">
       <slot v-bind="{ values }" />
 

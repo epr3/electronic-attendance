@@ -5,6 +5,7 @@ import { authRouter } from "./auth";
 import { subjectRouter } from "./subject";
 import { yearRouter } from "./year";
 import { classRouter } from "./class";
+import { scheduleRouter } from "./schedule";
 
 export const appRouter = router({
   class: classRouter,
@@ -12,6 +13,7 @@ export const appRouter = router({
   user: userRouter,
   subject: subjectRouter,
   year: yearRouter,
+  schedule: scheduleRouter,
   hello: protectedProcedure
     .input(
       object({

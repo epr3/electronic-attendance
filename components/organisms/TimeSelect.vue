@@ -5,7 +5,7 @@ const props = withDefaults(
     name: string;
     placeholder?: string;
   }>(),
-  { placeholder: "YYYY-MM-DD" }
+  { placeholder: "HH:mm" }
 );
 const { value, setValue } = useField<string>(() => props.name, undefined);
 </script>
@@ -16,11 +16,11 @@ const { value, setValue } = useField<string>(() => props.name, undefined);
       <Input :label="label" :name="name" :placeholder="placeholder">
         <template #right-icon>
           <VDropdown>
-            <div class="i-heroicons-calendar w-4 h-4 cursor-pointer" />
+            <div class="i-heroicons-clock w-4 h-4 cursor-pointer" />
             <template #popper="{ hide }">
-              <Calendar
-                :highlighted-date="value"
-                @select:date="
+              <DigitalClock
+                :value="value"
+                @select:time="
                   (value) => {
                     setValue(value);
                     hide();
