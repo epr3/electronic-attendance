@@ -44,7 +44,11 @@ const schedules = computed(() => data.value?.schedules.schedules);
           </div>
         </div>
         <div class="flex gap-2">
-          <IconButton color="success" size="lg">
+          <IconButton
+            color="success"
+            size="lg"
+            :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects/students`"
+          >
             <div class="i-heroicons-users w-6 h-6" />
           </IconButton>
           <IconButton color="info" size="lg">
