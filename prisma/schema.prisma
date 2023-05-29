@@ -17,7 +17,6 @@ model Approval {
   event       Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
   requestor   User            @relation(fields: [requestorId], references: [id], onDelete: Cascade)
 
-  @@index([requestorId], map: "approvals_requestor_id_fkey")
   @@map("approvals")
 }
 
@@ -37,7 +36,6 @@ model AbsenceDoc {
   imageUrl  String? @map("image_url")
   absence   Absence @relation(fields: [absenceId], references: [id], onDelete: Cascade)
 
-  @@index([absenceId], map: "absence_docs_absence_id_fkey")
   @@map("absence_docs")
 }
 
@@ -64,8 +62,6 @@ model Event {
   subject   SubjectTeacherClass @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   grades    Grade?
 
-  @@index([studentId], map: "events_student_id_fkey")
-  @@index([subjectId], map: "events_subject_id_fkey")
   @@map("events")
 }
 
@@ -82,8 +78,6 @@ model Class {
   students      ClassStudent[]
   teachers      SubjectTeacherClass[]
 
-  @@index([schoolId], map: "classes_school_id_fkey")
-  @@index([schoolYearId], map: "classes_school_year_id_fkey")
   @@map("classes")
 }
 
@@ -94,7 +88,6 @@ model Subject {
   school   School                @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   teachers SubjectTeacherClass[]
 
-  @@index([schoolId], map: "subjects_school_id_fkey")
   @@map("subjects")
 }
 
@@ -105,7 +98,6 @@ model SubjectStudent {
   subject   SubjectTeacherClass @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@id([studentId, subjectId])
-  @@index([subjectId], map: "subjects_students_subject_id_fkey")
   @@map("subjects_students")
 }
 
@@ -123,9 +115,6 @@ model SubjectTeacherClass {
   subject      Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   teacher      User             @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
-  @@index([classId], map: "subjects_teachers_classes_class_id_fkey")
-  @@index([subjectId], map: "subjects_teachers_classes_subject_id_fkey")
-  @@index([teacherId], map: "subjects_teachers_classes_teacher_id_fkey")
   @@map("subjects_teachers_classes")
 }
 
@@ -136,7 +125,6 @@ model ClassStudent {
   student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@id([studentId, classId])
-  @@index([classId], map: "classes_students_class_id_fkey")
   @@map("classes_students")
 }
 
@@ -181,7 +169,6 @@ model SchoolYear {
   holidays       SchoolYearHolidays[]
   school         School               @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  @@index([schoolId], map: "school_years_school_id_fkey")
   @@map("school_years")
 }
 
@@ -192,8 +179,17 @@ model SchoolYearHolidays {
   schoolYearId    String     @map("school_year_id")
   schoolYear      SchoolYear @relation(fields: [schoolYearId], references: [id], onDelete: Cascade)
 
-  @@index([schoolYearId], map: "school_year_holidays_school_year_id_fkey")
   @@map("school_year_holidays")
+}
+
+model UserMfa {
+  id         String  @id @default(uuid())
+  mfaSecret  String  @map("mfa_secret")
+  mfaSmsOnly Boolean @map("mfa_sms_only") @default(true)
+  userId     String  @unique @map("user_id")
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_mfas")
 }
 
 model UserPassport {
@@ -203,7 +199,6 @@ model UserPassport {
   passportType PASSPORT_TYPE @map("passport_type")
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId], map: "user_passports_user_id_fkey")
   @@map("user_passports")
 }
 
@@ -215,7 +210,6 @@ model SchoolUser {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([schoolId, userId])
-  @@index([userId], map: "schools_users_user_id_fkey")
   @@map("schools_users")
 }
 
@@ -226,6 +220,7 @@ model User {
   email            String                @unique
   verifiedAt       DateTime?             @map("verified_at")
   telephone        String
+  mfa              UserMfa?
   approvals        Approval[]
   headTeacherClass Class?                @relation("HeadTeacher")
   classes          ClassStudent[]

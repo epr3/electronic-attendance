@@ -40,7 +40,7 @@ const onSubmit = handleSubmit(async (values) => {
       schoolName,
       schoolAcronym,
     });
-    await navigateTo("/register/success");
+    return navigateTo(`/register/success?email=${email}`);
   } catch (e) {
     if (e instanceof TRPCClientError) {
       if (e.data.code === "BAD_REQUEST") {

@@ -66,7 +66,10 @@ export default defineNuxtConfig({
     },
   },
 
-  runtimeConfig: {},
+  runtimeConfig: {
+    vonageApiKey: process.env.VONAGE_API_KEY,
+    vonageApiSecret: process.env.VONAGE_API_SECRET,
+  },
 
   devtools: {
     enabled: false,

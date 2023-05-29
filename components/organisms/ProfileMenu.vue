@@ -13,7 +13,9 @@ const props = defineProps<{
 
 const route = useRoute();
 const schools = computed(() =>
-  props.user.school.filter((school) => school.role === ROLE.DIRECTOR)
+  props.user.school
+    ? props.user.school.filter((school) => school.role === ROLE.DIRECTOR)
+    : []
 );
 
 const logout = async () => {
@@ -65,7 +67,7 @@ const navItems = [
           </NuxtLink>
         </li>
 
-        <template v-if="schools.length">
+        <template v-if="schools && schools.length">
           <hr class="hr" />
           <li class="menu-header">Schools</li>
 

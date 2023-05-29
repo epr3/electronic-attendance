@@ -1,3 +1,18 @@
+<!-- <script lang="ts" setup>
+const route = useRoute();
+const { $client } = useNuxtApp();
+
+const { data } = await useAsyncData("qrCode", async () => {
+  const data = await $client.auth.mfaEnroll.query({
+    email: route.query.email as string,
+  });
+
+  return { qrCode: data.qrCode };
+});
+
+const qrCode = computed(() => data.value?.qrCode ?? "");
+</script> -->
+
 <template>
   <Card>
     <div class="space-y-4 p-4 lg:p-8 xl:w-128">
