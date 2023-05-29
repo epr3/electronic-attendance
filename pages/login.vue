@@ -17,12 +17,20 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 
 const onSubmit = handleSubmit(async (values) => {
   try {
-    await $client.auth.login.mutate({
+    const data = await $client.auth.login.mutate({
       email: values.email,
       password: values.password,
     });
 
-    await navigateTo("/");
+    if (data.hasMfa) {
+      await navigateTo("/mfa/verify");
+      return;
+    }
+
+    if (data.mfaRequired) {
+      return navigateTo("/mfa");
+    }
+    return navigateTo("/");
   } catch (e) {
     if (e instanceof TRPCClientError) {
       if (e.data.code === "BAD_REQUEST") {
