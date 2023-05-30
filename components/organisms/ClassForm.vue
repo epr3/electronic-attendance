@@ -54,8 +54,8 @@ if (route.params.classId) {
   });
 }
 
-const students = computed(() => data.value.students.users);
-const teachers = computed(() => data.value.teachers.users);
+const students = computed(() => data.value?.students.users ?? []);
+const teachers = computed(() => data.value?.teachers.users ?? []);
 
 const generalError = ref("");
 
@@ -97,7 +97,7 @@ const onSubmit = handleSubmit(async (values) => {
         students,
       });
     }
-    await navigateTo(
+    return await navigateTo(
       `/school/${route.params.id}/year/${route.params.yearId}/classes`
     );
   } catch (e) {

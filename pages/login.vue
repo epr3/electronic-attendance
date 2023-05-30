@@ -23,14 +23,13 @@ const onSubmit = handleSubmit(async (values) => {
     });
 
     if (data.hasMfa) {
-      await navigateTo("/mfa/verify");
-      return;
+      return await navigateTo("/mfa/verify");
     }
 
     if (data.mfaRequired) {
-      return navigateTo("/mfa");
+      return await navigateTo("/mfa");
     }
-    return navigateTo("/");
+    return await navigateTo("/");
   } catch (e) {
     if (e instanceof TRPCClientError) {
       if (e.data.code === "BAD_REQUEST") {

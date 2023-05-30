@@ -1,8 +1,9 @@
 <script lang="ts" setup>
+import { rrulestr } from "rrule";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const route = useRoute();
-const { $client } = useNuxtApp();
+const { $client, $dayjs } = useNuxtApp();
 
 const actions = inject(ModalActionSymbol);
 const subjectId = ref("");
@@ -19,6 +20,12 @@ const { data, refresh } = useAsyncData("schedules", async () => {
 });
 
 const schedules = computed(() => data.value?.schedules.schedules);
+
+const returnDateFromRrule = (rule: string) => {
+  const rrule = rrulestr(rule);
+
+  return $dayjs(rrule.options.dtstart).format("dddd");
+};
 </script>
 
 <template>
@@ -42,16 +49,28 @@ const schedules = computed(() => data.value?.schedules.schedules);
             <div class="i-heroicons-academic-cap w-8 h-8 shrink-0" />
             <span>{{ item.subject.name }}</span>
           </div>
+          <div class="flex items-center gap-2">
+            <div class="i-heroicons-calendar w-8 h-8 shrink-0" />
+            <span>{{ returnDateFromRrule(item.calendarRule) }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="i-heroicons-clock w-8 h-8 shrink-0" />
+            <span>{{ item.startTime }} - {{ item.endTime }}</span>
+          </div>
         </div>
         <div class="flex gap-2">
           <IconButton
             color="success"
             size="lg"
-            :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects/students`"
+            :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects/${item.id}/students`"
           >
             <div class="i-heroicons-users w-6 h-6" />
           </IconButton>
-          <IconButton color="info" size="lg">
+          <IconButton
+            color="info"
+            size="lg"
+            :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects/${item.id}`"
+          >
             <div class="i-heroicons-pencil-square w-6 h-6" />
           </IconButton>
           <IconButton

@@ -7,6 +7,8 @@ import { authenticator } from "otplib";
 
 import { publicProcedure, router, protectedProcedure } from "../trpc";
 
+authenticator.options = { window: 1 };
+
 export const authRouter = router({
   me: protectedProcedure.query(({ ctx }) => {
     return { user: ctx.session.user };
@@ -37,13 +39,13 @@ export const authRouter = router({
         include: { mfa: true },
       });
       if (user.mfa?.mfaSmsOnly) {
-        authenticator.options = { step: 120 };
         const token = authenticator.generate(user.mfa.mfaSecret);
         // re-enable when have money
-        // const from = "CatalogID";
-        // const to = user.telephone.split("+")[1];
-        // const text = `Your verification code is ${token}`;
-        return { token };
+        const from = "CatalogID";
+        const to = user.telephone.split("+")[1];
+        const text = `Your verification code is ${token}`;
+        console.log(from, to, text);
+        return { from, to, text };
         // await ctx.vonage.send({ from, to, text });
       }
 

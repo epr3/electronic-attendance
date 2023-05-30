@@ -20,7 +20,7 @@ const schools = computed(() =>
 
 const logout = async () => {
   await $client.auth.logout.query();
-  await navigateTo("/login");
+  return await navigateTo("/login");
 };
 
 const navItems = [

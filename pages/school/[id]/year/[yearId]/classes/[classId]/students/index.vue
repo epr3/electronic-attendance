@@ -1,37 +1,38 @@
 <script lang="ts" setup>
+import { User } from "@prisma/client";
+
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
-const { $client } = useNuxtApp();
 const route = useRoute();
-const { data, refresh } = await $client.class.getClasses.useQuery({
-  schoolId: route.params.id as string,
-  yearId: route.params.yearId as string,
-  page: parseInt((route.query.page as string) ?? 1, 10),
-  pageSize: parseInt((route.query.pageSize as string) ?? 12, 10),
-});
+const { $client } = useNuxtApp();
 
-const classes = computed(() =>
-  data.value
-    ? data.value.classes.map((item) => {
-        return {
-          id: item.id,
-          title: item.title,
-          headTeacher: `${item.headTeacher.firstName} ${item.headTeacher.lastName}`,
-          noOfStudents: item._count.students,
-        };
-      })
-    : []
+const { data, refresh } = await useAsyncData(
+  `students-${route.params.classId}`,
+  async () => {
+    const students = await $client.user.getStudentsByClass.query({
+      schoolId: route.params.id as string,
+      classId: route.params.classId as string,
+    });
+
+    return { students };
+  }
 );
 
-const classId = ref("");
+const students = computed(() =>
+  data.value ? data.value.students.users.map((item) => ({ ...item.user })) : []
+);
+
+const userId = ref("");
 
 const columnHeaders = [
-  { name: "Class Title", value: "title" },
-  { name: "Head Teacher", value: "headTeacher" },
-  { name: "No of students", value: "noOfStudents" },
-];
+  { name: "First Name", value: "firstName" },
+  { name: "Last Name", value: "lastName" },
+  { name: "Email", value: "email" },
+  { name: "Telephone", value: "telephone" },
+  { name: "Verified At", value: "verifiedAt" },
+] as { name: string; value: keyof User }[];
 </script>
 
 <template>
@@ -39,9 +40,9 @@ const columnHeaders = [
     <Button
       color="success"
       class="self-start"
-      :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/new`"
+      :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/students/new`"
     >
-      Add class
+      Add student
     </Button>
     <Table full-width>
       <thead>
@@ -53,42 +54,25 @@ const columnHeaders = [
         </TableRow>
       </thead>
       <TableBody>
-        <template v-if="classes.length">
-          <TableRow v-for="row in classes" :key="row.id">
+        <template v-if="students.length">
+          <TableRow v-for="row in students" :key="row.id">
             <TableCell
               v-for="cell in columnHeaders"
-              :key="`cell-${cell.value}-${row.id}`"
+              :key="`cell-${cell}-${row.id}`"
             >
-              {{ row[cell.value as keyof typeof row] }}
+              {{ row[cell.value] }}
             </TableCell>
 
             <TableCell>
               <div class="flex space-x-4">
-                <IconButton
-                  color="success"
-                  size="lg"
-                  :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/students`"
-                >
-                  <div class="i-heroicons-users w-6 h-6" />
-                </IconButton>
-                <IconButton
-                  color="success"
-                  :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/subjects`"
-                >
-                  <div class="i-heroicons-academic-cap w-6 h-6" />
-                </IconButton>
-
-                <IconButton
-                  color="info"
-                  :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}`"
-                >
+                <IconButton color="info" :to="`students/${row.id}`">
                   <div class="i-heroicons-pencil-square w-6 h-6" />
                 </IconButton>
                 <IconButton
                   color="error"
                   @click="
                     () => {
-                      classId = row.id;
+                      userId = row.id;
                       actions?.openModal();
                     }
                   "
@@ -110,23 +94,22 @@ const columnHeaders = [
       <ModalOverlay />
       <ModalContent>
         <ModalHead>
-          <h3 class="text-2xl font-semibold">Delete year</h3>
+          <h3 class="text-2xl font-semibold">Delete user</h3>
         </ModalHead>
         <ModalCloseButton />
         <ModalBody>
-          <p>Are you sure you want to delete this year?</p>
+          <p>Are you sure you want to delete this user?</p>
         </ModalBody>
         <ModalFooter>
           <Button
             color="error"
             @click="
               async () => {
-                await $client.class.deleteClass.mutate({
+                await $client.user.deleteUser.mutate({
                   schoolId: route.params.id as string,
-                  yearId: route.params.yearId as string,
-                  classId,
+                  userId,
                 });
-                classId = '';
+                userId = '';
                 await refresh();
                 actions?.closeModal();
               }
@@ -137,7 +120,7 @@ const columnHeaders = [
           <Button
             @click="
               () => {
-                classId = '';
+                userId = '';
                 actions?.closeModal();
               }
             "

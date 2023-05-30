@@ -15,7 +15,7 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 
 const onSubmit = handleSubmit(async (values) => {
   await $client.auth.mfaVerify.query({ token: values.token });
-  return navigateTo("/");
+  return await navigateTo("/");
 });
 </script>
 

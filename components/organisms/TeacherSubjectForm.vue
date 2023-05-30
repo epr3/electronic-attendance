@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ROLE } from "@prisma/client";
-import { RRule, datetime } from "rrule";
+import { RRule, datetime, rrulestr } from "rrule";
 
 import { array, string, object } from "zod";
 
@@ -28,38 +28,57 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
       pageSize: 12,
     }),
   ]);
-  return { students, teachers, subjectsData };
+
+  let schedule = null;
+
+  if (route.params.subjectId) {
+    schedule = await $client.schedule.getSchedule.query({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+      scheduleId: route.params.subjectId as string,
+    });
+  }
+  return { students, teachers, subjectsData, schedule };
 });
 
 const students = computed(() => data.value?.students.users);
 const teachers = computed(() => data.value?.teachers.users);
 const subjects = computed(() => data.value?.subjectsData.subjects);
-// let year:
-//   | (SchoolYear & {
-//       holidays: SchoolYearHolidays[];
-//     })
-//   | null = null;
+const schedule = computed(() => {
+  if (data.value?.schedule) {
+    const scheduleRRule = rrulestr(data.value.schedule.calendarRule);
 
-// if (route.params.yearId) {
-//   subject = await $client.year.getYear.query({
-//     schoolId: route.params.id as string,
-//     yearId: route.params.yearId as string,
-//   });
-// }
+    return [
+      {
+        startDate: $dayjs(scheduleRRule.options.dtstart).format("YYYY-MM-DD"),
+        endDate: $dayjs(scheduleRRule.options.until).format("YYYY-MM-DD"),
+        startTime: data.value.schedule.startTime,
+        endTime: data.value.schedule.endTime,
+        subjectId: data.value.schedule.subjectId,
+        teacherId: data.value.schedule.teacherId,
+      },
+      {
+        students: data.value.schedule.students.map((item) => item.studentId),
+      },
+      {},
+    ];
+  }
 
-const initialValues: Record<
-  string,
-  string | { name: string; startDate: string; endDate: string }[]
->[] = [
-  {
-    startDate: $dayjs().startOf("d").format("YYYY-MM-DD"),
-    endDate: $dayjs().add(1, "d").startOf("d").format("YYYY-MM-DD"),
-    startTime: $dayjs().startOf("d").format("HH:mm"),
-    endTime: $dayjs().add(1, "d").startOf("d").format("HH:mm"),
-  },
-  {},
-  {},
-];
+  return [];
+});
+
+const initialValues = schedule.value.length
+  ? schedule.value
+  : [
+      {
+        startDate: $dayjs().startOf("d").format("YYYY-MM-DD"),
+        endDate: $dayjs().add(1, "d").startOf("d").format("YYYY-MM-DD"),
+        startTime: $dayjs().startOf("d").format("HH:mm"),
+        endTime: $dayjs().add(1, "d").startOf("d").format("HH:mm"),
+      },
+      {},
+      {},
+    ];
 
 const schemas = [
   object({
@@ -69,7 +88,7 @@ const schemas = [
     endDate: string().min(1),
     startTime: string().min(1),
     endTime: string().min(1),
-  }).refine(() => true, { message: "The dates selected are not valid." }),
+  }),
   object({
     students: array(string().uuid()),
   }),
@@ -99,20 +118,34 @@ async function onSubmit(values: Record<string, any>) {
       0
     ),
   });
+  if (!route.params.subjectId) {
+    await $client.schedule.addSchedule.mutate({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+      students: values.students,
+      calendarRule: schedule.toString(),
+      classId: route.params.classId as string,
+      startTime: values.startTime,
+      endTime: values.endTime,
+      teacherId: values.teacherId,
+      subjectId: values.subjectId,
+    });
+  } else {
+    await $client.schedule.editSchedule.mutate({
+      scheduleId: route.params.subjectId as string,
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+      students: values.students,
+      calendarRule: schedule.toString(),
+      classId: route.params.classId as string,
+      startTime: values.startTime,
+      endTime: values.endTime,
+      teacherId: values.teacherId,
+      subjectId: values.subjectId,
+    });
+  }
 
-  await $client.schedule.addSchedule.mutate({
-    schoolId: route.params.id as string,
-    yearId: route.params.yearId as string,
-    students: values.students,
-    calendarRule: schedule.toString(),
-    classId: route.params.classId as string,
-    startTime: values.startTime,
-    endTime: values.endTime,
-    teacherId: values.teacherId,
-    subjectId: values.subjectId,
-  });
-
-  await navigateTo(
+  return await navigateTo(
     `/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects`
   );
 }

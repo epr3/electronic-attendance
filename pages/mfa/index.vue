@@ -22,13 +22,13 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 
 async function smsEnroll() {
   await $client.auth.mfaEnroll.query({ secret: secret.value, smsOnly: true });
-  await navigateTo("/mfa/verify");
+  return await navigateTo("/mfa/verify");
 }
 
 const onSubmit = handleSubmit(async (values) => {
   await $client.auth.mfaEnroll.query({ secret: secret.value, smsOnly: false });
   await $client.auth.mfaVerify.query({ token: values.token });
-  return navigateTo("/");
+  return await navigateTo("/");
 });
 </script>
 

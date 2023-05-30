@@ -9,6 +9,39 @@ import {
 } from "../trpc";
 
 export const scheduleRouter = router({
+  removeStudentFromSchedule: yearProcedure
+    .input(
+      object({
+        classId: string().uuid(),
+        subjectId: string().uuid(),
+        studentId: string().uuid(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const school = await getSchool(input.schoolId, ctx.prisma);
+      const isAuthorized = checkIfUserAuthorized(ctx.user, school);
+      if (!isAuthorized) {
+        return new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not authorized for this action",
+        });
+      }
+      try {
+        await ctx.prisma.subjectStudent.delete({
+          where: {
+            studentId_subjectId: {
+              studentId: input.studentId,
+              subjectId: input.subjectId,
+            },
+          },
+        });
+      } catch (e) {
+        throw new TRPCError({
+          message: JSON.stringify(e),
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    }),
   addSchedule: yearProcedure
     .input(
       object({
@@ -80,96 +113,94 @@ export const scheduleRouter = router({
         });
       }
     }),
-  // editSchedule: yearProcedure
-  //   .input(
-  //     object({
-  //       classId: string().uuid(),
-  //       title: string().min(1),
-  //       headTeacherId: string().uuid(),
-  //       students: array(string().uuid()),
-  //     })
-  //   )
-  //   .mutation(async ({ ctx, input }) => {
-  //     const school = await getSchool(input.schoolId, ctx.prisma);
-  //     const isAuthorized = checkIfUserAuthorized(ctx.user, school);
-  //     if (!isAuthorized) {
-  //       return new TRPCError({
-  //         code: "FORBIDDEN",
-  //         message: "You are not authorized for this action",
-  //       });
-  //     }
-  //     try {
-  //       return await ctx.prisma.$transaction(async (tx) => {
-  //         const group = await tx.class.update({
-  //           where: {
-  //             id: input.classId,
-  //           },
-  //           data: {
-  //             title: input.title,
-  //             headTeacherId: input.headTeacherId,
-  //             isActive: true,
-  //             schoolId: input.schoolId,
-  //             schoolYearId: input.yearId,
-  //           },
-  //         });
-  //         await tx.classStudent.deleteMany({ where: { classId: group.id } });
-  //         await tx.classStudent.createMany({
-  //           data: input.students.map((item) => ({
-  //             studentId: item,
-  //             classId: group.id,
-  //           })),
-  //         });
-  //         const classWithStudents = await tx.class.findFirstOrThrow({
-  //           where: { id: group.id },
-  //           include: {
-  //             headTeacher: true,
-  //             students: {
-  //               include: {
-  //                 student: true,
-  //               },
-  //             },
-  //           },
-  //         });
-  //         return classWithStudents;
-  //       });
-  //     } catch (e) {
-  //       throw new TRPCError({
-  //         message: JSON.stringify(e),
-  //         code: "INTERNAL_SERVER_ERROR",
-  //       });
-  //     }
-  //   }),
-  // getSchedule: yearProcedure
-  //   .input(object({ classId: string().uuid() }))
-  //   .query(async ({ ctx, input }) => {
-  //     const school = await getSchool(input.schoolId, ctx.prisma);
-  //     const isAuthorized = checkIfUserAuthorized(ctx.user, school);
-  //     if (!isAuthorized) {
-  //       throw new TRPCError({
-  //         code: "FORBIDDEN",
-  //         message: "You are not authorized for this action",
-  //       });
-  //     }
-  //     try {
-  //       const classWithStudents = await ctx.prisma.class.findFirstOrThrow({
-  //         where: { id: input.classId },
-  //         include: {
-  //           headTeacher: true,
-  //           students: {
-  //             include: {
-  //               student: true,
-  //             },
-  //           },
-  //         },
-  //       });
-  //       return classWithStudents;
-  //     } catch (e) {
-  //       throw new TRPCError({
-  //         message: JSON.stringify(e),
-  //         code: "INTERNAL_SERVER_ERROR",
-  //       });
-  //     }
-  //   }),
+  editSchedule: yearProcedure
+    .input(
+      object({
+        scheduleId: string().uuid(),
+        classId: string().uuid(),
+        calendarRule: string().min(1),
+        startTime: string().min(1),
+        endTime: string().min(1),
+        students: array(string().uuid()),
+        subjectId: string().uuid(),
+        teacherId: string().uuid(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const school = await getSchool(input.schoolId, ctx.prisma);
+      const isAuthorized = checkIfUserAuthorized(ctx.user, school);
+      if (!isAuthorized) {
+        return new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not authorized for this action",
+        });
+      }
+      try {
+        return await ctx.prisma.$transaction(async (tx) => {
+          const subjectTeacherClass = await tx.subjectTeacherClass.update({
+            where: {
+              id: input.scheduleId,
+            },
+            data: {
+              subjectId: input.subjectId,
+              classId: input.classId,
+              teacherId: input.teacherId,
+              calendarRule: input.calendarRule,
+              startTime: input.startTime,
+              endTime: input.endTime,
+            },
+          });
+
+          await tx.subjectStudent.deleteMany({
+            where: {
+              subjectId: input.scheduleId,
+            },
+          });
+
+          await tx.subjectStudent.createMany({
+            data: input.students.map((item) => ({
+              studentId: item,
+              subjectId: subjectTeacherClass.id,
+            })),
+          });
+
+          return subjectTeacherClass;
+        });
+      } catch (e) {
+        throw new TRPCError({
+          message: JSON.stringify(e),
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    }),
+  getSchedule: yearProcedure
+    .input(object({ scheduleId: string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const school = await getSchool(input.schoolId, ctx.prisma);
+      const isAuthorized = checkIfUserAuthorized(ctx.user, school);
+      if (!isAuthorized) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You are not authorized for this action",
+        });
+      }
+      try {
+        const subjectWithStudents =
+          await ctx.prisma.subjectTeacherClass.findFirstOrThrow({
+            where: { id: input.scheduleId },
+            include: {
+              teacher: true,
+              students: true,
+            },
+          });
+        return subjectWithStudents;
+      } catch (e) {
+        throw new TRPCError({
+          message: JSON.stringify(e),
+          code: "INTERNAL_SERVER_ERROR",
+        });
+      }
+    }),
   getSchedules: yearProcedure
     .input(
       object({

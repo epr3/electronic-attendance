@@ -5,10 +5,7 @@ import { ZodType } from "zod";
 const props = withDefaults(
   defineProps<{
     validationSchema: ZodType[];
-    initialValues: Record<
-      string,
-      string | { startDate: string; endDate: string }[]
-    >[];
+    initialValues: unknown[];
     steps?: string[];
   }>(),
   { steps: () => [] }
