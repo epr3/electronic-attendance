@@ -1,7 +1,7 @@
 import { Auth } from "@vonage/auth";
 import { SMS } from "@vonage/sms";
 
-export default eventHandler((event) => {
+export function useVonage() {
   const config = useRuntimeConfig();
 
   const auth = new Auth({
@@ -10,5 +10,6 @@ export default eventHandler((event) => {
   });
 
   const vonage = new SMS(auth);
-  event.context.vonage = vonage;
-});
+
+  return vonage;
+}

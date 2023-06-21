@@ -11,7 +11,7 @@ import { SMS } from "@vonage/sms";
  */
 export const createContext = (event: H3Event) => {
   const config = useRuntimeConfig();
-  const prisma = event.context.prisma;
+  const prisma = prisma;
   const session = event.context.session as IronSession & IronSessionData;
 
   const auth = new Auth({

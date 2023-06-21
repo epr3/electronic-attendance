@@ -4,50 +4,49 @@ import { RRule, datetime, rrulestr } from "rrule";
 import { array, string, object } from "zod";
 
 const route = useRoute();
-const { $dayjs, $client } = useNuxtApp();
+const { $dayjs } = useNuxtApp();
 const steps = ["Select dates", "Select holidays", "Verify dates"];
 
-let year:
-  | (SchoolYear & {
-      holidays: SchoolYearHolidays[];
-    })
-  | null = null;
+const year = ref<any>({});
 
 if (route.params.yearId) {
-  year = await $client.year.getYear.query({
-    schoolId: route.params.id as string,
-    yearId: route.params.yearId as string,
-  });
+  year.value = await useFetch<
+    SchoolYear & {
+      holidays: SchoolYearHolidays[];
+    }
+  >(`/api/school/${route.params.id}/years/${route.params.yearId}`);
 }
 
 const initialValues: Record<
   string,
   string | { name: string; startDate: string; endDate: string }[]
 >[] = [
-  year
+  year.value
     ? {
-        startDate: $dayjs(rrulestr(year.schoolDateRule).options.dtstart).format(
-          "YYYY-MM-DD"
-        ),
-        endDate: $dayjs(rrulestr(year.schoolDateRule).options.until).format(
-          "YYYY-MM-DD"
-        ),
+        startDate: $dayjs(
+          rrulestr(year.value.schoolDateRule).options.dtstart
+        ).format("YYYY-MM-DD"),
+        endDate: $dayjs(
+          rrulestr(year.value.schoolDateRule).options.until
+        ).format("YYYY-MM-DD"),
       }
     : {
         startDate: $dayjs().format("YYYY-MM-DD"),
         endDate: $dayjs().add(1, "d").format("YYYY-MM-DD"),
       },
-  year
+  year.value && year.value
     ? {
-        holidays: year.holidays.map((item) => ({
-          name: item.name,
-          startDate: $dayjs(
-            rrulestr(item.holidayDateRule).options.dtstart
-          ).format("YYYY-MM-DD"),
-          endDate: $dayjs(rrulestr(item.holidayDateRule).options.until).format(
-            "YYYY-MM-DD"
-          ),
-        })),
+        holidays: year.value.holidays.map(
+          (item: { name: string; holidayDateRule: string }) => ({
+            name: item.name,
+            startDate: $dayjs(
+              rrulestr(item.holidayDateRule).options.dtstart
+            ).format("YYYY-MM-DD"),
+            endDate: $dayjs(
+              rrulestr(item.holidayDateRule).options.until
+            ).format("YYYY-MM-DD"),
+          })
+        ),
       }
     : {
         holidays: [
@@ -131,19 +130,24 @@ async function onSubmit(values: Record<string, any>) {
       };
     }
   );
-  if (year) {
-    await $client.year.editYear.mutate({
-      yearId: year.id,
-      schoolId: route.params.id as string,
+
+  const apiRoute = route.params.userId
+    ? `/api/school/${route.params.id}/years/${route.params.yearId}`
+    : `/api/school/${route.params.id}/years`;
+
+  const method = route.params.userId ? "PUT" : "POST";
+
+  const { error } = await useFetch(apiRoute, {
+    method,
+    body: {
       schoolDateRule: schedule.toString(),
       holidayDateRules: holidayRrules,
-    });
-  } else {
-    await $client.year.addYear.mutate({
-      schoolId: route.params.id as string,
-      schoolDateRule: schedule.toString(),
-      holidayDateRules: holidayRrules,
-    });
+    },
+  });
+
+  if (error.value) {
+    // generalError.value = error.value?.message ?? "";
+    return;
   }
 
   await navigateTo(`/school/${route.params.id}/year`);

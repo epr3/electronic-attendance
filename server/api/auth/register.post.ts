@@ -2,6 +2,7 @@ import { PASSPORT_TYPE, ROLE, TOKEN_TYPE } from "@prisma/client";
 
 import { object, string } from "zod";
 import * as bcrypt from "bcrypt";
+import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
   const input = await useValidatedBody(
@@ -18,12 +19,12 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    await event.context.prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
           email: input.email,
-          firstName: input.firstName as string,
-          lastName: input.lastName as string,
+          firstName: input.firstName,
+          lastName: input.lastName,
           telephone: input.telephone,
         },
       });
@@ -42,8 +43,8 @@ export default defineEventHandler(async (event) => {
       });
       const school = await tx.school.create({
         data: {
-          name: input.schoolName as string,
-          acronym: input.schoolAcronym as string,
+          name: input.schoolName,
+          acronym: input.schoolAcronym,
         },
       });
       await tx.schoolUser.create({
@@ -55,6 +56,7 @@ export default defineEventHandler(async (event) => {
       });
       return user;
     });
+    return sendNoContent(event, 204);
   } catch (e) {
     return createError({
       statusCode: 500,

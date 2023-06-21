@@ -13,20 +13,18 @@ const { handleSubmit, isSubmitting } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  const { data, error } = await useAsyncData<
+  const { data, error } = await useFetch<
     {
       hasMfa: boolean;
       mfaRequired: boolean;
     },
     { message: string }
-  >("login", () =>
-    $fetch("/api/auth/login", {
-      method: "POST",
-      body: { email: values.email, password: values.password },
-    })
-  );
+  >("/api/auth/login", {
+    method: "POST",
+    body: { email: values.email, password: values.password },
+  });
 
-  if (error) {
+  if (error.value) {
     generalError.value = error.value?.message ?? "";
     return;
   }

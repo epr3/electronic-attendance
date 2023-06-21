@@ -1,10 +1,11 @@
 import { authenticator } from "otplib";
+import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
   const user = useServerAuth(event);
 
   try {
-    const userObject = await event.context.prisma.user.findFirstOrThrow({
+    const userObject = await prisma.user.findFirstOrThrow({
       where: { email: user.email },
       include: { mfa: true },
     });
@@ -19,7 +20,7 @@ export default defineEventHandler(async (event) => {
       // await ctx.vonage.send({ from, to, text });
     }
 
-    return null;
+    return sendNoContent(event, 204);
   } catch (e) {
     return createError({
       statusCode: 500,

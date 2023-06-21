@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { ROLE, type School, type SchoolUser, type User } from "@prisma/client";
 
-const { $client } = useNuxtApp();
-
 const props = defineProps<{
   user: User & {
     school: (SchoolUser & {
@@ -19,7 +17,7 @@ const schools = computed(() =>
 );
 
 const logout = async () => {
-  await $client.auth.logout.query();
+  await useFetch("/api/auth/logout");
   return await navigateTo("/login");
 };
 

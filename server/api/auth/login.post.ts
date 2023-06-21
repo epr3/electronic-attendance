@@ -2,6 +2,7 @@ import { PASSPORT_TYPE, ROLE } from "@prisma/client";
 
 import { object, string } from "zod";
 import * as bcrypt from "bcrypt";
+import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
   const input = await useValidatedBody(
@@ -13,7 +14,7 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const user = await event.context.prisma.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: { email: input.email, verifiedAt: { not: null } },
       include: {
         mfa: true,

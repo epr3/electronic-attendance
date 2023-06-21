@@ -1,18 +1,11 @@
 <script lang="ts" setup>
 import { User, SchoolUser, School } from "@prisma/client";
-const { $client } = useNuxtApp();
 
-const { data } = await $client.auth.me.useQuery();
+const { data } = await useFetch<
+  User & { school: (SchoolUser & { school: School })[] }
+>("/api/auth/me");
 
-const user = computed(() =>
-  data
-    ? (data.value?.user as User & {
-        school: (SchoolUser & {
-          school: School;
-        })[];
-      })
-    : null
-);
+const user = computed(() => (data ? data.value : null));
 </script>
 
 <template>

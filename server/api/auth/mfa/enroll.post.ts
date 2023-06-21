@@ -1,4 +1,5 @@
 import { object, string, boolean } from "zod";
+import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
   const user = useServerAuth(event);
@@ -9,13 +10,14 @@ export default defineEventHandler(async (event) => {
       smsOnly: boolean(),
     })
   );
+
   try {
-    const userObject = await event.context.prisma.user.findFirstOrThrow({
+    const userObject = await prisma.user.findFirstOrThrow({
       where: { email: user.email },
       include: { mfa: true },
     });
 
-    await event.context.prisma.userMfa.upsert({
+    await prisma.userMfa.upsert({
       where: {
         userId: userObject.id,
       },
@@ -29,7 +31,7 @@ export default defineEventHandler(async (event) => {
       },
     });
 
-    return null;
+    return sendNoContent(event, 204);
   } catch (e) {
     return createError({
       statusCode: 500,

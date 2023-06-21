@@ -28,11 +28,9 @@ const onSubmit = handleSubmit(async (values) => {
     schoolName,
   } = values;
 
-  const { error } = await useAsyncData<
-    void,
-    { data: { data: { message: string } } }
-  >("register", () =>
-    $fetch("/api/auth/register", {
+  const { error } = await useFetch<null, { message: string }>(
+    "/api/auth/register",
+    {
       method: "POST",
       body: {
         email,
@@ -43,11 +41,11 @@ const onSubmit = handleSubmit(async (values) => {
         schoolAcronym,
         schoolName,
       },
-    })
+    }
   );
 
-  if (error) {
-    generalError.value = error.value?.data?.data?.message ?? "";
+  if (error.value) {
+    generalError.value = error.value?.message ?? "";
     return;
   }
 

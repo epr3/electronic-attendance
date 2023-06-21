@@ -5,19 +5,16 @@ import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
-const { $client } = useNuxtApp();
 const route = useRoute();
-const { data, refresh } = await $client.user.getUsers.useQuery({
-  schoolId: route.params.id as string,
-  page: parseInt((route.query.page as string) ?? 1, 10),
-  pageSize: parseInt((route.query.pageSize as string) ?? 12, 10),
-});
 
-const users = computed(() =>
-  data.value
-    ? data.value.users.map((item) => ({ ...item.user, role: item.role }))
-    : []
+const page = parseInt((route.query.page as string) ?? 1, 10);
+const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
+
+const { data, refresh } = await useFetch<{ users: (User & { role: ROLE })[] }>(
+  `/api/school/${route.params.id}/users?page=${page}&pageSize=${pageSize}`
 );
+
+const users = computed(() => (data.value ? data.value.users : []));
 
 const userId = ref("");
 
@@ -29,6 +26,11 @@ const columnHeaders = [
   { name: "Telephone", value: "telephone" },
   { name: "Verified At", value: "verifiedAt" },
 ] as { name: string; value: keyof ({ role: ROLE } & User) }[];
+
+const deleteUser = (userId: string) =>
+  $fetch(`/api/school/${route.params.id}/users/${userId}`, {
+    method: "DELETE",
+  });
 </script>
 
 <template>
@@ -100,10 +102,7 @@ const columnHeaders = [
             color="error"
             @click="
               async () => {
-                await $client.user.deleteUser.mutate({
-                  schoolId: route.params.id as string,
-                  userId,
-                });
+                await deleteUser(userId);
                 userId = '';
                 await refresh();
                 actions?.closeModal();
