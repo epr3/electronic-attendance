@@ -8,7 +8,7 @@ declare module "iron-session" {
   }
 }
 
-export function useServerAuth(event: H3Event) {
+export function useServerAuth(event: H3Event): User & { mfaVerified: boolean } {
   if (!event.context.session) {
     throw createError({
       statusCode: 401,

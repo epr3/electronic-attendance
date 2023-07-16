@@ -1,5 +1,6 @@
 import { ROLE } from "@prisma/client";
 import { type H3Event } from "h3";
+import { prisma } from "~/prisma/db";
 
 export async function useUserRoleSchool(
   event: H3Event,

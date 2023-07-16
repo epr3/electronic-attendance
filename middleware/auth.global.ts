@@ -5,11 +5,7 @@ export default defineNuxtRouteMiddleware((to) => {
 
   if (to.meta.layout === "auth") {
     // if (!session.value.user || !session.value.user.verifiedAt) {
-    if (!session.value) {
-      return navigateTo("/login");
-    }
-
-    if (!session.value.user) {
+    if (!session.value || !session.value.user) {
       return navigateTo("/login");
     }
 

@@ -20,20 +20,21 @@ export default defineEventHandler(async (event) => {
   try {
     event.node.res.statusCode = 201;
     return await prisma.$transaction(async (tx) => {
-      const schoolYear = await tx.schoolYear.create({
+      const schoolYearObj = await tx.schoolYear.create({
         data: {
           schoolId: id,
           schoolDateRule: input.schoolDateRule,
-          holidays: input.holidayDateRules.map(
-            (item: { name: string; rule: string }) => ({
-              schoolYearId: schoolYear.id,
-              name: item.name,
-              holidayDateRule: item.rule,
-            })
-          ),
+          holidays: {
+            create: input.holidayDateRules.map(
+              (item: { name: string; rule: string }) => ({
+                name: item.name,
+                holidayDateRule: item.rule,
+              })
+            ),
+          },
         },
       });
-      return schoolYear;
+      return schoolYearObj;
     });
   } catch (e) {
     return createError({

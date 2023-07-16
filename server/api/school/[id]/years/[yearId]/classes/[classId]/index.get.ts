@@ -3,15 +3,24 @@ import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
-  const yearId = event.context.params!.yearId;
+  const classId = event.context.params!.classId;
 
   await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    await prisma.schoolYear.delete({
-      where: { id: yearId },
+    const classWithStudents = await prisma.class.findFirstOrThrow({
+      where: { id: classId },
+      include: {
+        headTeacher: true,
+        students: {
+          include: {
+            student: true,
+          },
+        },
+      },
     });
-    return sendNoContent(event, 204);
+
+    return classWithStudents;
   } catch (e) {
     return createError({
       statusCode: 500,

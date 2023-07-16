@@ -12,14 +12,16 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  await useAsyncData("verify", () =>
-    $fetch("/api/auth/mfa/verify", {
+  try {
+    await useFetch("/api/auth/mfa/verify", {
       method: "POST",
       body: { token: values.token },
-    })
-  );
+    });
 
-  return await navigateTo("/");
+    return await navigateTo("/");
+  } catch (e) {
+    console.log(e);
+  }
 });
 </script>
 

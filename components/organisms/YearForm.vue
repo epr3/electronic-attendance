@@ -7,14 +7,20 @@ const route = useRoute();
 const { $dayjs } = useNuxtApp();
 const steps = ["Select dates", "Select holidays", "Verify dates"];
 
-const year = ref<any>({});
+const year = ref<
+  | (SchoolYear & {
+      holidays: SchoolYearHolidays[];
+    })
+  | null
+>(null);
 
 if (route.params.yearId) {
-  year.value = await useFetch<
+  const { data } = await useFetch<
     SchoolYear & {
       holidays: SchoolYearHolidays[];
     }
   >(`/api/school/${route.params.id}/years/${route.params.yearId}`);
+  year.value = data.value;
 }
 
 const initialValues: Record<
@@ -34,7 +40,7 @@ const initialValues: Record<
         startDate: $dayjs().format("YYYY-MM-DD"),
         endDate: $dayjs().add(1, "d").format("YYYY-MM-DD"),
       },
-  year.value && year.value
+  year.value
     ? {
         holidays: year.value.holidays.map(
           (item: { name: string; holidayDateRule: string }) => ({

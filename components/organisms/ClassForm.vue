@@ -1,57 +1,44 @@
 <script lang="ts" setup>
-import { TRPCClientError } from "@trpc/client";
 import { object, string, array } from "zod";
-import { ROLE } from "@prisma/client";
+import { Class, ClassStudent, ROLE, User } from "@prisma/client";
 
 const route = useRoute();
 const router = useRouter();
-const { $client } = useNuxtApp();
 
-let classObject = null;
+const studentsPage = 1;
+const studentsPageSize = 12;
+const headTeacherPage = 1;
+const headTeacherPageSize = 12;
 
-const { data } = await useAsyncData(
+const classObject = ref<(Class & { students: ClassStudent[] }) | null>(null);
+
+const { data } = await useAsyncData<{
+  students: { users: (User & { role: ROLE })[] };
+  teachers: { users: (User & { role: ROLE })[] };
+}>(
   "classForm" + route.params.classId ? `-${route.params.classId}` : "",
   async () => {
-    if (route.params.classId) {
-      const [students, teachers] = await Promise.all([
-        $client.user.getUsers.query({
-          schoolId: route.params.id as string,
-          page: 1,
-          pageSize: 12,
-          role: ROLE.STUDENT,
-        }),
-        $client.user.getUsers.query({
-          schoolId: route.params.id as string,
-          page: 1,
-          pageSize: 12,
-          role: ROLE.TEACHER,
-        }),
-      ]);
-
-      return { students, teachers };
-    }
+    const apiUrl = route.params.classId
+      ? `/api/school/${route.params.id}/users?excludeYear=${route.params.yearId}&includeClass=${route.params.classId}`
+      : `/api/school/${route.params.id}/users?excludeYear=${route.params.yearId}`;
     const [students, teachers] = await Promise.all([
-      $client.user.getNonAssignedStudents.query({
-        schoolId: route.params.id as string,
-        page: 1,
-        pageSize: 12,
-      }),
-      $client.user.getNonAssignedHeadTeachers.query({
-        schoolId: route.params.id as string,
-        page: 1,
-        pageSize: 12,
-      }),
+      $fetch<{ users: (User & { role: ROLE })[] }>(
+        `${apiUrl}&page=${studentsPage}&pageSize=${studentsPageSize}&role=${ROLE.STUDENT}`
+      ),
+      $fetch<{ users: (User & { role: ROLE })[] }>(
+        `${apiUrl}&page=${headTeacherPage}&pageSize=${headTeacherPageSize}&role=${ROLE.TEACHER}`
+      ),
     ]);
+
     return { students, teachers };
   }
 );
 
 if (route.params.classId) {
-  classObject = await $client.class.getClass.query({
-    schoolId: route.params.id as string,
-    yearId: route.params.yearId as string,
-    classId: route.params.classId as string,
-  });
+  const { data } = await useFetch<Class & { students: ClassStudent[] }>(
+    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}`
+  );
+  classObject.value = data.value;
 }
 
 const students = computed(() => data.value?.students.users ?? []);
@@ -59,12 +46,12 @@ const teachers = computed(() => data.value?.teachers.users ?? []);
 
 const generalError = ref("");
 
-const { handleSubmit, isSubmitting, errors } = useForm({
-  initialValues: classObject
+const { handleSubmit, isSubmitting } = useForm({
+  initialValues: classObject.value
     ? {
-        title: classObject.title,
-        headTeacherId: classObject.headTeacherId,
-        students: classObject.students.map((item) => item.studentId),
+        title: classObject.value.title,
+        headTeacherId: classObject.value.headTeacherId,
+        students: classObject.value.students.map((item) => item.studentId),
       }
     : {},
   validationSchema: toTypedSchema(
@@ -77,49 +64,25 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  try {
-    const { title, headTeacherId, students } = values;
-    if (route.params.classId) {
-      await $client.class.editClass.mutate({
-        schoolId: route.params.id as string,
-        classId: route.params.classId as string,
-        yearId: route.params.yearId as string,
-        title,
-        headTeacherId,
-        students,
-      });
-    } else {
-      await $client.class.addClass.mutate({
-        schoolId: route.params.id as string,
-        yearId: route.params.yearId as string,
-        title,
-        headTeacherId,
-        students,
-      });
-    }
-    return await navigateTo(
-      `/school/${route.params.id}/year/${route.params.yearId}/classes`
-    );
-  } catch (e) {
-    if (e instanceof TRPCClientError) {
-      if (e.data.code === "BAD_REQUEST") {
-        const fieldErrors = Object.keys(e.data.zodError.fieldErrors).reduce(
-          (acc, val) => {
-            acc[val as keyof typeof errors.value] = (
-              e as TRPCClientError<any>
-            ).data.zodError.fieldErrors[val][0];
-            return acc;
-          },
-          {} as Record<keyof typeof errors.value, string>
-        );
-        generalError.value = Object.keys(fieldErrors)
-          .map((item) => fieldErrors[item as keyof typeof fieldErrors])
-          .join(",");
-      } else {
-        generalError.value = e.message;
-      }
-    }
+  const { title, headTeacherId, students } = values;
+  const apiRoute = route.params.classId
+    ? `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}`
+    : `/api/school/${route.params.id}/years/${route.params.yearId}/classes`;
+
+  const method = route.params.classId ? "PUT" : "POST";
+
+  const { error } = await useFetch(apiRoute, {
+    method,
+    body: { title, headTeacherId, students },
+  });
+
+  if (error.value) {
+    generalError.value = error.value?.message ?? "";
+    return;
   }
+  return await navigateTo(
+    `/school/${route.params.id}/year/${route.params.yearId}/classes`
+  );
 });
 </script>
 
@@ -149,12 +112,8 @@ const onSubmit = handleSubmit(async (values) => {
               name="headTeacherId"
               placeholder="Select head teacher"
             >
-              <option
-                v-for="item in teachers"
-                :key="item.userId"
-                :value="item.userId"
-              >
-                {{ item.user.firstName }} {{ item.user.lastName }}
+              <option v-for="item in teachers" :key="item.id" :value="item.id">
+                {{ item.firstName }} {{ item.lastName }}
               </option>
             </Select>
           </FormElement>
@@ -164,12 +123,12 @@ const onSubmit = handleSubmit(async (values) => {
             <div class="flex flex-col">
               <Checkbox
                 v-for="item in students"
-                :id="item.userId"
-                :key="item.userId"
+                :id="item.id"
+                :key="item.id"
                 has-border
                 name="students"
-                :value="item.userId"
-                :label="`${item.user.firstName} ${item.user.lastName}`"
+                :value="item.id"
+                :label="`${item.firstName} ${item.lastName}`"
               />
             </div>
           </FormElement>

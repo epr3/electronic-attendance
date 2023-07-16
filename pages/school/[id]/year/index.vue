@@ -1,16 +1,18 @@
 <script lang="ts" setup>
+import { SchoolYear } from "@prisma/client";
 import { rrulestr } from "rrule";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
-const { $client, $dayjs } = useNuxtApp();
+const { $dayjs } = useNuxtApp();
 const route = useRoute();
-const { data, refresh } = await $client.year.getYears.useQuery({
-  schoolId: route.params.id as string,
-  page: parseInt((route.query.page as string) ?? 1, 10),
-  pageSize: parseInt((route.query.pageSize as string) ?? 12, 10),
-});
+const page = parseInt((route.query.page as string) ?? 1, 10);
+const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
+
+const { data, refresh } = await useFetch<{ years: SchoolYear[] }>(
+  `/api/school/${route.params.id}/years?page=${page}&pageSize=${pageSize}`
+);
 
 const years = computed(() =>
   data.value
@@ -32,6 +34,11 @@ const columnHeaders = [
   { name: "End Date", value: "endDate" },
   // { name: "Holidays", value: "email" },
 ];
+
+const deleteYear = (yearId: string) =>
+  $fetch(`/api/school/${route.params.id}/years/${yearId}`, {
+    method: "DELETE",
+  });
 </script>
 
 <template>
@@ -107,10 +114,7 @@ const columnHeaders = [
             color="error"
             @click="
               async () => {
-                await $client.year.deleteYear.mutate({
-                  schoolId: route.params.id as string,
-                  yearId,
-                });
+                await deleteYear(yearId);
                 yearId = '';
                 await refresh();
                 actions?.closeModal();

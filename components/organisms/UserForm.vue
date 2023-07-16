@@ -4,12 +4,14 @@ import { object, string, nativeEnum } from "zod";
 
 const route = useRoute();
 
-const user = ref({});
+const user = ref<(User & { role: ROLE }) | null>(null);
 
 if (route.params.userId) {
-  user.value = await useFetch<User & { role: ROLE }>(
+  const { data } = await useFetch<User & { role: ROLE }>(
     `/api/auth/school/${route.params.id}/users/${route.params.userId}`
   );
+
+  user.value = data.value;
 }
 
 const generalError = ref("");
