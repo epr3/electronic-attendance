@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ROLE, Subject, User } from "@prisma/client";
+import { ROLE, Subject, SubjectTeacherClass, User } from "@prisma/client";
 import { RRule, datetime, rrulestr } from "rrule";
 
 import { array, string, object } from "zod";
@@ -41,7 +41,9 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
   let schedule = null;
 
   if (route.params.subjectId) {
-    schedule = await $fetch(
+    schedule = await $fetch<
+      SubjectTeacherClass & { students: { studentId: string }[] }
+    >(
       `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules/${route.params.subjectId}`
     );
   }
