@@ -20,15 +20,12 @@ export const usePagination = () => {
     page.value -= 1;
   };
 
-  watch(
-    () => [page, pageSize],
-    async () => {
-      await navigateTo({
-        path: "",
-        query: { page: page.value, pageSize: pageSize.value },
-      });
-    }
-  );
+  watch([page, pageSize], async () => {
+    await navigateTo({
+      path: "",
+      query: { page: page.value, pageSize: pageSize.value },
+    });
+  });
 
   return { page, pageSize, setPageSize, setPage, nextPage, prevPage };
 };

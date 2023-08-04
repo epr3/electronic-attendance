@@ -15,8 +15,8 @@ const { data, refresh } = await useFetch<{
   count: number;
 }>(`/api/school/${route.params.id}/users`, {
   query: {
-    page,
-    pageSize,
+    page: toRef(page),
+    pageSize: toRef(pageSize),
   },
 });
 
@@ -43,6 +43,7 @@ const deleteUser = (userId: string) =>
 <template>
   <div class="flex flex-col gap-4">
     <Button color="success" class="self-start" to="user/new"> Add user </Button>
+    <div></div>
     <Table full-width>
       <thead>
         <TableRow>
@@ -53,43 +54,36 @@ const deleteUser = (userId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <template v-if="users.length">
-          <TableRow v-for="row in users" :key="row.id">
-            <TableCell
-              v-for="cell in columnHeaders"
-              :key="`cell-${cell}-${row.id}`"
-            >
-              {{
-                cell.value === "role"
-                  ? row[cell.value].slice(0, 1).toUpperCase() +
-                    row[cell.value].slice(1).toLowerCase()
-                  : row[cell.value]
-              }}
-            </TableCell>
+        <TableRow v-for="row in users" :key="row.id">
+          <TableCell
+            v-for="cell in columnHeaders"
+            :key="`cell-${cell}-${row.id}`"
+          >
+            {{
+              cell.value === "role"
+                ? row[cell.value].slice(0, 1).toUpperCase() +
+                  row[cell.value].slice(1).toLowerCase()
+                : row[cell.value]
+            }}
+          </TableCell>
 
-            <TableCell>
-              <div class="flex space-x-4">
-                <IconButton color="info" :to="`user/${row.id}`">
-                  <div class="i-heroicons-pencil-square w-6 h-6" />
-                </IconButton>
-                <IconButton
-                  color="error"
-                  @click="
-                    () => {
-                      userId = row.id;
-                      actions?.openModal();
-                    }
-                  "
-                >
-                  <div class="i-heroicons-trash w-6 h-6" />
-                </IconButton>
-              </div>
-            </TableCell>
-          </TableRow>
-        </template>
-        <TableRow v-else>
-          <TableCell :colspan="columnHeaders.length + 1">
-            No data to display.
+          <TableCell>
+            <div class="flex space-x-4">
+              <IconButton color="info" :to="`user/${row.id}`">
+                <div class="i-heroicons-pencil-square w-6 h-6" />
+              </IconButton>
+              <IconButton
+                color="error"
+                @click="
+                  () => {
+                    userId = row.id;
+                    actions?.openModal();
+                  }
+                "
+              >
+                <div class="i-heroicons-trash w-6 h-6" />
+              </IconButton>
+            </div>
           </TableCell>
         </TableRow>
       </TableBody>
