@@ -28,16 +28,19 @@ export default defineConfig({
   transformers: [transformerVariantGroup(), transformerDirectives()],
   shortcuts: [
     {
-      btn: "block text-center text-white min-w-[100px] py-4 px-4 font-semibold rounded shadow-md",
+      btn: "block text-center text-black min-w-[100px] py-4 px-4 font-semibold rounded shadow-md",
     },
     {
-      "btn-success": "bg-success",
+      "btn-primary": "bg-brand-primary text-white",
     },
     {
-      "btn-info": "bg-brand-primary",
+      "btn-success": "bg-success text-white",
     },
     {
-      "btn-error": "bg-danger",
+      "btn-info": "bg-info text-white",
+    },
+    {
+      "btn-error": "bg-danger text-white",
     },
     { "btn-disabled": "text-gray-400 bg-gray-200" },
     { "btn-lg": "py-8 px-8 text-lg" },

@@ -7,14 +7,21 @@ const actions = inject(ModalActionSymbol);
 
 const route = useRoute();
 
-const page = parseInt((route.query.page as string) ?? 1, 10);
-const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
+const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
+  usePagination();
 
-const { data, refresh } = await useFetch<{ users: (User & { role: ROLE })[] }>(
-  `/api/school/${route.params.id}/users?page=${page}&pageSize=${pageSize}`
-);
+const { data, refresh } = await useFetch<{
+  users: (User & { role: ROLE })[];
+  count: number;
+}>(`/api/school/${route.params.id}/users`, {
+  query: {
+    page,
+    pageSize,
+  },
+});
 
 const users = computed(() => (data.value ? data.value.users : []));
+const count = computed(() => (data.value ? data.value.count : 0));
 
 const userId = ref("");
 
@@ -87,6 +94,16 @@ const deleteUser = (userId: string) =>
         </TableRow>
       </TableBody>
     </Table>
+    <Pagination
+      v-if="users.length"
+      :page-size="pageSize"
+      :current-page="page"
+      :total="count"
+      @page-size:set="setPageSize"
+      @page:set="setPage"
+      @page:next="nextPage"
+      @page:prev="prevPage"
+    />
     <Modal>
       <ModalOverlay />
       <ModalContent>

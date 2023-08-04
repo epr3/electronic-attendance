@@ -71,7 +71,7 @@ const submitForm = handleSubmit(() => {
           @click="decrementMonth"
         />
         <div class="flex gap-2">
-          <Select name="month">
+          <FormSelect name="month">
             <option v-for="i in 12" :key="`month-${i - 1}`" :value="i - 1">
               {{
                 $dayjs()
@@ -79,9 +79,9 @@ const submitForm = handleSubmit(() => {
                   .format("MMMM")
               }}
             </option>
-          </Select>
+          </FormSelect>
 
-          <Select name="year">
+          <FormSelect name="year">
             <option
               v-for="i in [
                 currentDate.year() - 2,
@@ -95,7 +95,7 @@ const submitForm = handleSubmit(() => {
             >
               {{ $dayjs().year(i).format("YYYY") }}
             </option>
-          </Select>
+          </FormSelect>
         </div>
         <button
           class="i-heroicons-chevron-right w-4 h-4 cursor-pointer"

@@ -163,7 +163,7 @@ async function onSubmit(values: Record<string, any>) {
       <div class="flex flex-col gap-4">
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <FormElement name="subjectId">
-            <Select
+            <FormSelect
               label="Subject"
               name="subjectId"
               placeholder="Select subject"
@@ -171,10 +171,10 @@ async function onSubmit(values: Record<string, any>) {
               <option v-for="item in subjects" :key="item.id" :value="item.id">
                 {{ item.name }}
               </option>
-            </Select>
+            </FormSelect>
           </FormElement>
           <FormElement name="teacherId">
-            <Select
+            <FormSelect
               label="Teacher"
               name="teacherId"
               placeholder="Select teacher"
@@ -182,7 +182,7 @@ async function onSubmit(values: Record<string, any>) {
               <option v-for="item in teachers" :key="item.id" :value="item.id">
                 {{ item.firstName }} {{ item.lastName }}
               </option>
-            </Select>
+            </FormSelect>
           </FormElement>
         </div>
 

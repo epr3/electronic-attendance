@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { Class } from "@prisma/client";
 import { object, string } from "zod";
 
 const route = useRoute();
@@ -9,7 +10,7 @@ const generalError = ref("");
 const page = 1;
 const pageSize = 12;
 
-const { data, error } = await useFetch(
+const { data } = await useFetch<{ classes: Class[] }>(
   `/api/school/${route.params.id}/years/${route.params.yearId}/classes?page=${page}&pageSize=${pageSize}`
 );
 

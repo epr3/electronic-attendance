@@ -82,7 +82,7 @@ const onSubmit = handleSubmit(async (values) => {
         <Input label="Telephone" type="telephone" name="telephone" />
       </FormElement>
       <FormElement name="role">
-        <Select label="Role" name="role" placeholder="Select role">
+        <FormSelect label="Role" name="role" placeholder="Select role">
           <option
             v-for="role in Object.values(ROLE).filter(
               (item) => item !== ROLE.SUPERADMIN && item !== ROLE.DIRECTOR
@@ -92,7 +92,7 @@ const onSubmit = handleSubmit(async (values) => {
           >
             {{ role.slice(0, 1).toUpperCase() + role.slice(1).toLowerCase() }}
           </option>
-        </Select>
+        </FormSelect>
       </FormElement>
       <Button :disabled="isSubmitting" type="submit">Submit</Button>
     </form>

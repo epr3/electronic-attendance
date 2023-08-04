@@ -107,7 +107,7 @@ const onSubmit = handleSubmit(async (values) => {
             <Input label="Title" name="title" />
           </FormElement>
           <FormElement name="headTeacherId">
-            <Select
+            <FormSelect
               label="Head Teacher"
               name="headTeacherId"
               placeholder="Select head teacher"
@@ -115,7 +115,7 @@ const onSubmit = handleSubmit(async (values) => {
               <option v-for="item in teachers" :key="item.id" :value="item.id">
                 {{ item.firstName }} {{ item.lastName }}
               </option>
-            </Select>
+            </FormSelect>
           </FormElement>
         </div>
         <div class="basis-1/2">

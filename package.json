@@ -38,7 +38,7 @@
     "unocss": "^0.53.6"
   },
   "dependencies": {
-    "@prisma/client": "5.0.0",
+    "@prisma/client": "5.1.1",
     "@vee-validate/nuxt": "^4.10.8",
     "@vee-validate/zod": "^4.10.8",
     "@vonage/server-sdk": "^3.6.0",

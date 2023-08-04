@@ -7,7 +7,7 @@ const message = useFieldError(name);
 </script>
 
 <template>
-  <div class="w-full">
+  <div>
     <slot />
     <p v-if="message" class="text-red-500 text-xs mt-2">{{ message }}</p>
   </div>

@@ -3,9 +3,21 @@ const props = defineProps<{
   name: string;
   label?: string;
   placeholder?: string;
+  modelValue: string | number | unknown;
 }>();
 
-const { value } = useField(() => props.name, undefined);
+const emit = defineEmits<{
+  (e: "update:modelValue", value: string | number | unknown): void;
+}>();
+
+const value = computed({
+  get() {
+    return props.modelValue;
+  },
+  set(value) {
+    emit("update:modelValue", value);
+  },
+});
 </script>
 
 <template>
