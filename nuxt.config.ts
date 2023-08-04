@@ -24,7 +24,6 @@ export default defineNuxtConfig({
     "@nuxtjs/eslint-module",
     "@unocss/nuxt",
     "@vueuse/nuxt",
-    "nuxt-iron-session",
     "@vee-validate/nuxt",
   ],
 
@@ -55,14 +54,6 @@ export default defineNuxtConfig({
           ],
         },
       },
-    },
-  },
-
-  session: {
-    cookieName: "electronic-attendance",
-    password: "complex_password_at_least_32_characters_long",
-    cookieOptions: {
-      secure: process.env.NODE_ENV === "production",
     },
   },
 

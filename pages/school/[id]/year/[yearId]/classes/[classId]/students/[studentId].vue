@@ -1,3 +1,3 @@
 <template>
-  <div><StudentForm /></div>
+  <div><ClassUpdateForm /></div>
 </template>

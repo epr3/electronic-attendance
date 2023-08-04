@@ -7,9 +7,12 @@ const props = defineProps<{
   hasBorder?: boolean;
 }>();
 
-const { checked, handleChange } = useField(() => props.name, undefined, {
+const name = computed(() => props.name);
+const value = computed(() => props.value);
+
+const { checked, handleChange } = useField(name, undefined, {
   type: "checkbox",
-  checkedValue: props.value,
+  checkedValue: value,
 });
 </script>
 

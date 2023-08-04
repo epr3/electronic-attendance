@@ -1,16 +1,23 @@
 <script lang="ts" setup>
+import { Class, User } from "@prisma/client";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
-const { $client } = useNuxtApp();
 const route = useRoute();
-const { data, refresh } = await $client.class.getClasses.useQuery({
-  schoolId: route.params.id as string,
-  yearId: route.params.yearId as string,
-  page: parseInt((route.query.page as string) ?? 1, 10),
-  pageSize: parseInt((route.query.pageSize as string) ?? 12, 10),
-});
+const page = parseInt((route.query.page as string) ?? 1, 10);
+const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
+
+const { data, refresh } = await useFetch<{
+  classes: (Class & {
+    _count: {
+      students: number;
+    };
+    headTeacher: User;
+  })[];
+}>(
+  `/api/school/${route.params.id}/years/${route.params.yearId}/classes?page=${page}&pageSize=${pageSize}`
+);
 
 const classes = computed(() =>
   data.value
@@ -32,6 +39,14 @@ const columnHeaders = [
   { name: "Head Teacher", value: "headTeacher" },
   { name: "No of students", value: "noOfStudents" },
 ];
+
+const deleteClass = (classId: string) =>
+  $fetch(
+    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${classId}`,
+    {
+      method: "DELETE",
+    }
+  );
 </script>
 
 <template>
@@ -121,11 +136,7 @@ const columnHeaders = [
             color="error"
             @click="
               async () => {
-                await $client.class.deleteClass.mutate({
-                  schoolId: route.params.id as string,
-                  yearId: route.params.yearId as string,
-                  classId,
-                });
+                await deleteClass(classId);
                 classId = '';
                 await refresh();
                 actions?.closeModal();

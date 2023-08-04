@@ -1,26 +1,23 @@
 <script lang="ts" setup>
-import { TRPCClientError } from "@trpc/client";
 import { ROLE, User } from "@prisma/client";
 import { object, string, nativeEnum } from "zod";
 
 const route = useRoute();
-const router = useRouter();
 
-const { $client } = useNuxtApp();
-
-let user = null;
+const user = ref<(User & { role: ROLE }) | null>(null);
 
 if (route.params.userId) {
-  user = await $client.user.getUser.query({
-    schoolId: route.params.id as string,
-    userId: route.params.userId as string,
-  });
+  const { data } = await useFetch<User & { role: ROLE }>(
+    `/api/auth/school/${route.params.id}/users/${route.params.userId}`
+  );
+
+  user.value = data.value;
 }
 
 const generalError = ref("");
 
-const { handleSubmit, isSubmitting, errors } = useForm({
-  initialValues: user as User & { role: ROLE },
+const { handleSubmit, isSubmitting } = useForm({
+  initialValues: user.value,
   validationSchema: toTypedSchema(
     object({
       firstName: string().min(1),
@@ -33,49 +30,24 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  try {
-    const { email, firstName, lastName, telephone, role } = values;
-    if (route.params.userId) {
-      await $client.user.editUser.mutate({
-        schoolId: route.params.id as string,
-        userId: route.params.userId as string,
-        email,
-        firstName,
-        lastName,
-        telephone,
-        role,
-      });
-    } else {
-      await $client.user.addUser.mutate({
-        schoolId: route.params.id as string,
-        email,
-        firstName,
-        lastName,
-        telephone,
-        role,
-      });
-    }
-    router.go(-1);
-  } catch (e) {
-    if (e instanceof TRPCClientError) {
-      if (e.data.code === "BAD_REQUEST") {
-        const fieldErrors = Object.keys(e.data.zodError.fieldErrors).reduce(
-          (acc, val) => {
-            acc[val as keyof typeof errors.value] = (
-              e as TRPCClientError<any>
-            ).data.zodError.fieldErrors[val][0];
-            return acc;
-          },
-          {} as Record<keyof typeof errors.value, string>
-        );
-        generalError.value = Object.keys(fieldErrors)
-          .map((item) => fieldErrors[item as keyof typeof fieldErrors])
-          .join(",");
-      } else {
-        generalError.value = e.message;
-      }
-    }
+  const { email, firstName, lastName, telephone, role } = values;
+
+  const apiRoute = route.params.userId
+    ? `/api/school/${route.params.id}/users/${route.params.userId}`
+    : `/api/school/${route.params.id}/users`;
+
+  const method = route.params.userId ? "PUT" : "POST";
+
+  const { error } = await useFetch(apiRoute, {
+    method,
+    body: { email, firstName, lastName, telephone, role },
+  });
+
+  if (error.value) {
+    generalError.value = error.value?.message ?? "";
+    return;
   }
+  await navigateTo(`/school/${route.params.id}/user`);
 });
 </script>
 
@@ -85,8 +57,8 @@ const onSubmit = handleSubmit(async (values) => {
       <div
         class="i-heroicons-arrow-left w-8 h-8 cursor-pointer"
         @click="
-          () => {
-            router.go(-1);
+          async () => {
+            await navigateTo(`/school/${route.params.id}/user`);
           }
         "
       />

@@ -1,12 +1,9 @@
 <script lang="ts" setup>
-import { TRPCClientError } from "@trpc/client";
 import { object, string } from "zod";
-
-const { $client } = useNuxtApp();
 
 const generalError = ref("");
 
-const { handleSubmit, isSubmitting, errors } = useForm({
+const { handleSubmit, isSubmitting } = useForm({
   validationSchema: toTypedSchema(
     object({
       email: string().email(),
@@ -16,40 +13,30 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  try {
-    const data = await $client.auth.login.mutate({
-      email: values.email,
-      password: values.password,
-    });
+  const { data, error } = await useFetch<
+    {
+      hasMfa: boolean;
+      mfaRequired: boolean;
+    },
+    { message: string }
+  >("/api/auth/login", {
+    method: "POST",
+    body: { email: values.email, password: values.password },
+  });
 
-    if (data.hasMfa) {
-      return await navigateTo("/mfa/verify");
-    }
-
-    if (data.mfaRequired) {
-      return await navigateTo("/mfa");
-    }
-    return await navigateTo("/");
-  } catch (e) {
-    if (e instanceof TRPCClientError) {
-      if (e.data.code === "BAD_REQUEST") {
-        const fieldErrors = Object.keys(e.data.zodError.fieldErrors).reduce(
-          (acc, val) => {
-            acc[val as keyof typeof errors.value] = (
-              e as TRPCClientError<any>
-            ).data.zodError.fieldErrors[val][0];
-            return acc;
-          },
-          {} as Record<"email" | "password", string>
-        );
-        generalError.value = Object.keys(fieldErrors)
-          .map((item) => fieldErrors[item as keyof typeof fieldErrors])
-          .join(",");
-      } else {
-        generalError.value = e.message;
-      }
-    }
+  if (error.value) {
+    generalError.value = error.value?.message ?? "";
+    return;
   }
+
+  if (data.value?.hasMfa) {
+    return await navigateTo("/mfa/verify");
+  }
+
+  if (data.value?.mfaRequired) {
+    return await navigateTo("/mfa");
+  }
+  return await navigateTo("/");
 });
 </script>
 

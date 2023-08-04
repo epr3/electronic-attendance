@@ -3,23 +3,27 @@ import { rrulestr } from "rrule";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const route = useRoute();
-const { $client, $dayjs } = useNuxtApp();
+const { $dayjs } = useNuxtApp();
 
 const actions = inject(ModalActionSymbol);
 const subjectId = ref("");
 
-const { data, refresh } = useAsyncData("schedules", async () => {
-  const schedules = await $client.schedule.getSchedules.query({
-    classId: route.params.classId as string,
-    schoolId: route.params.id as string,
-    yearId: route.params.yearId as string,
-    page: parseInt((route.query.page as string) ?? 1, 10),
-    pageSize: parseInt((route.query.pageSize as string) ?? 12, 10),
-  });
-  return { schedules };
-});
+const page = parseInt((route.query.page as string) ?? 1, 10);
+const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
 
-const schedules = computed(() => data.value?.schedules.schedules);
+const { data, refresh } = await useFetch(
+  `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules?page=${page}&pageSize=${pageSize}`
+);
+
+const schedules = computed(() => data.value?.schedules);
+
+const deleteSchedule = (scheduleId: string) =>
+  $fetch(
+    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules/${scheduleId}`,
+    {
+      method: "DELETE",
+    }
+  );
 
 const returnDateFromRrule = (rule: string) => {
   const rrule = rrulestr(rule);
@@ -116,12 +120,7 @@ const returnDateFromRrule = (rule: string) => {
             color="error"
             @click="
               async () => {
-                await $client.schedule.deleteSchedule.mutate({
-                  schoolId: route.params.id as string,
-                  yearId: route.params.yearId as string,
-                  subjectId,
-                  classId: route.params.classId as string,
-                });
+                await deleteSchedule(subjectId);
                 subjectId = '';
                 await refresh();
                 actions?.closeModal();

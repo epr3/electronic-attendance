@@ -1,12 +1,9 @@
 <script lang="ts" setup>
-import { TRPCClientError } from "@trpc/client";
 import { object, string } from "zod";
-
-const { $client } = useNuxtApp();
 
 const generalError = ref("");
 
-const { handleSubmit, isSubmitting, errors } = useForm({
+const { handleSubmit, isSubmitting } = useForm({
   validationSchema: toTypedSchema(
     object({
       email: string().email(),
@@ -21,46 +18,38 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  try {
-    const {
-      email,
-      password,
-      firstName,
-      lastName,
-      telephone,
-      schoolAcronym,
-      schoolName,
-    } = values;
-    await $client.auth.register.mutate({
-      email,
-      password,
-      firstName,
-      lastName,
-      telephone,
-      schoolName,
-      schoolAcronym,
-    });
-    return await navigateTo(`/register/success?email=${email}`);
-  } catch (e) {
-    if (e instanceof TRPCClientError) {
-      if (e.data.code === "BAD_REQUEST") {
-        const fieldErrors = Object.keys(e.data.zodError.fieldErrors).reduce(
-          (acc, val) => {
-            acc[val as keyof typeof errors.value] = (
-              e as TRPCClientError<any>
-            ).data.zodError.fieldErrors[val][0];
-            return acc;
-          },
-          {} as Record<keyof typeof errors.value, string>
-        );
-        generalError.value = Object.keys(fieldErrors)
-          .map((item) => fieldErrors[item as keyof typeof fieldErrors])
-          .join(",");
-      } else {
-        generalError.value = e.message;
-      }
+  const {
+    email,
+    password,
+    firstName,
+    lastName,
+    telephone,
+    schoolAcronym,
+    schoolName,
+  } = values;
+
+  const { error } = await useFetch<null, { message: string }>(
+    "/api/auth/register",
+    {
+      method: "POST",
+      body: {
+        email,
+        password,
+        firstName,
+        lastName,
+        telephone,
+        schoolAcronym,
+        schoolName,
+      },
     }
+  );
+
+  if (error.value) {
+    generalError.value = error.value?.message ?? "";
+    return;
   }
+
+  return await navigateTo(`/register/success?email=${email}`);
 });
 </script>
 

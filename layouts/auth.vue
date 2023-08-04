@@ -1,18 +1,39 @@
 <script lang="ts" setup>
-import { User, SchoolUser, School } from "@prisma/client";
-const { $client } = useNuxtApp();
+import { User, SchoolUser, School, ROLE } from "@prisma/client";
 
-const { data } = await $client.auth.me.useQuery();
+const auth = useAuth();
 
-const user = computed(() =>
-  data
-    ? (data.value?.user as User & {
-        school: (SchoolUser & {
-          school: School;
-        })[];
-      })
-    : null
-);
+if (!auth.value) {
+  try {
+    const { data } = await useFetch("/api/auth/session");
+    auth.value = data;
+  } catch (e) {
+    await navigateTo("/login");
+  }
+}
+
+if (!auth.value || !auth.value.user) {
+  await navigateTo("/login");
+}
+
+if (auth.value) {
+  if (
+    !auth.value.user.mfa &&
+    [ROLE.ADMIN, ROLE.DIRECTOR, ROLE.TEACHER].includes(auth.value.user.role)
+  ) {
+    await navigateTo("/mfa");
+  }
+
+  if (!auth.value.mfaVerified) {
+    await navigateTo("/mfa/verify");
+  }
+}
+
+const { data } = await useFetch<
+  User & { school: (SchoolUser & { school: School })[] }
+>("/api/auth/me");
+
+const user = computed(() => (data ? data.value : null));
 </script>
 
 <template>

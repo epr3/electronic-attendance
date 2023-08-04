@@ -1,6 +1,5 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = []
 }
 
 datasource db {
@@ -185,7 +184,7 @@ model SchoolYearHolidays {
 model UserMfa {
   id         String  @id @default(uuid())
   mfaSecret  String  @map("mfa_secret")
-  mfaSmsOnly Boolean @map("mfa_sms_only") @default(true)
+  mfaSmsOnly Boolean @default(true) @map("mfa_sms_only")
   userId     String  @unique @map("user_id")
   user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -232,6 +231,8 @@ model User {
   subjects         SubjectTeacherClass[]
   tokens           Token?
   userPassports    UserPassport[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
   @@map("users")
 }

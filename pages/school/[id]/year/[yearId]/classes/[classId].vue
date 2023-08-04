@@ -1,20 +1,13 @@
 <script lang="ts" setup>
+import { Class, ClassStudent } from "@prisma/client";
+
 const route = useRoute();
-const { $client } = useNuxtApp();
 
-const { data } = useAsyncData(async () => {
-  const classObject = await $client.class.getClass.query({
-    classId: route.params.classId as string,
-    yearId: route.params.yearId as string,
-    schoolId: route.params.id as string,
-  });
-
-  return { class: classObject };
-});
-
-const classObject = computed(() =>
-  data.value ? data.value.class : { title: "" }
+const { data } = await useFetch<Class & { students: ClassStudent[] }>(
+  `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}`
 );
+
+const classObject = computed(() => (data.value ? data.value : { title: "" }));
 </script>
 
 <template>

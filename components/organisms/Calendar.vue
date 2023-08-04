@@ -10,8 +10,10 @@ const props = withDefaults(defineProps<{ highlightedDate?: string }>(), {
 });
 const emit = defineEmits<{ (e: "select:date", value: string): void }>();
 
+const highlightedDate = computed(() => props.highlightedDate);
+
 const currentDate = ref(
-  props.highlightedDate ? $dayjs(props.highlightedDate) : $dayjs()
+  highlightedDate.value ? $dayjs(highlightedDate.value) : $dayjs()
 );
 
 const { setFieldValue, values, handleSubmit } = useForm({

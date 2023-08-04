@@ -5,20 +5,13 @@ import { IronSessionData, IronSession } from "iron-session";
 import { Auth } from "@vonage/auth";
 import { SMS } from "@vonage/sms";
 
-declare module "iron-session" {
-  interface IronSessionData {
-    user?: User;
-    mfaVerified?: boolean;
-  }
-}
-
 /**
  * Creates context for an incoming request
  * @link https://trpc.io/docs/context
  */
 export const createContext = (event: H3Event) => {
   const config = useRuntimeConfig();
-  const prisma = event.context.prisma;
+  const prisma = prisma;
   const session = event.context.session as IronSession & IronSessionData;
 
   const auth = new Auth({

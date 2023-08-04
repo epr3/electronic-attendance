@@ -1,15 +1,16 @@
 <script lang="ts" setup>
+import { Subject } from "@prisma/client";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
-const { $client } = useNuxtApp();
 const route = useRoute();
-const { data, refresh } = await $client.subject.getSubjects.useQuery({
-  schoolId: route.params.id as string,
-  page: parseInt((route.query.page as string) ?? 1, 10),
-  pageSize: parseInt((route.query.pageSize as string) ?? 12, 10),
-});
+const page = parseInt((route.query.page as string) ?? 1, 10);
+const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
+
+const { data, refresh } = await useFetch<{ subjects: Subject[] }>(
+  `/api/school/${route.params.id}/subjects?page=${page}&pageSize=${pageSize}`
+);
 
 const subjects = computed(() => (data.value ? data.value.subjects : []));
 
@@ -19,6 +20,11 @@ const columnHeaders = [{ name: "Name", value: "name" }] as {
   name: string;
   value: keyof { name: string };
 }[];
+
+const deleteSubject = (subjectId: string) =>
+  $fetch(`/api/school/${route.params.id}/subjects/${subjectId}`, {
+    method: "DELETE",
+  });
 </script>
 
 <template>
@@ -87,10 +93,7 @@ const columnHeaders = [{ name: "Name", value: "name" }] as {
             color="error"
             @click="
               async () => {
-                await $client.subject.deleteSubject.mutate({
-                  schoolId: route.params.id as string,
-                  subjectId,
-                });
+                await deleteSubject(subjectId);
                 subjectId = '';
                 await refresh();
                 actions?.closeModal();

@@ -1,13 +1,9 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
 
-const { $client } = useNuxtApp();
-
-const { data } = await useAsyncData("qr", async () => {
-  const data = await $client.auth.generateQR.query();
-
-  return data;
-});
+const { data } = await useFetch<{ qrCode: string; secret: string }>(
+  "/api/auth/mfa/generate-qr"
+);
 
 const qrCode = computed(() => data.value?.qrCode || "");
 const secret = computed(() => data.value?.secret || "");
@@ -21,13 +17,27 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 async function smsEnroll() {
-  await $client.auth.mfaEnroll.query({ secret: secret.value, smsOnly: true });
+  await useFetch("/api/auth/mfa/enroll", {
+    method: "POST",
+    body: { secret: secret.value, smsOnly: true },
+  });
+
   return await navigateTo("/mfa/verify");
 }
 
 const onSubmit = handleSubmit(async (values) => {
-  await $client.auth.mfaEnroll.query({ secret: secret.value, smsOnly: false });
-  await $client.auth.mfaVerify.query({ token: values.token });
+  await useAsyncData("verify", () =>
+    $fetch("/api/auth/mfa/enroll", {
+      method: "POST",
+      body: { secret: secret.value, smsOnly: false },
+    }).then(() =>
+      $fetch("/api/auth/mfa/verify", {
+        method: "POST",
+        body: { token: values.token },
+      })
+    )
+  );
+
   return await navigateTo("/");
 });
 </script>

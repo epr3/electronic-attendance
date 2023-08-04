@@ -1,43 +1,53 @@
 <script lang="ts" setup>
-import { ROLE } from "@prisma/client";
+import { ROLE, Subject, SubjectTeacherClass, User } from "@prisma/client";
 import { RRule, datetime, rrulestr } from "rrule";
 
 import { array, string, object } from "zod";
 
 const route = useRoute();
-const { $dayjs, $client } = useNuxtApp();
+const { $dayjs } = useNuxtApp();
 const steps = ["Select dates & teacher", "Select students", "Verify data"];
+
+const studentsPage = 1;
+const studentsPageSize = 12;
+const teachersPage = 1;
+const teachersPageSize = 12;
+const subjectsPage = 1;
+const subjectsPageSize = 12;
 
 const { data } = await useAsyncData("teacherSubjectForm", async () => {
   const [students, teachers, subjectsData] = await Promise.all([
-    $client.user.getStudentsByClass.query({
-      schoolId: route.params.id as string,
-      page: 1,
-      pageSize: 12,
-      classId: route.params.classId as string,
-    }),
-    $client.user.getUsers.query({
-      schoolId: route.params.id as string,
-      page: 1,
-      pageSize: 12,
-      role: ROLE.TEACHER,
-    }),
-    $client.subject.getSubjects.query({
-      schoolId: route.params.id as string,
-      page: 1,
-      pageSize: 12,
-    }),
+    $fetch<{
+      users: (User & {
+        role: ROLE;
+      })[];
+    }>(
+      `/api/school/${route.params.id}/users?page=${studentsPage}&pageSize=${studentsPageSize}&role=STUDENT&includeClass=${route.params.classId}`
+    ),
+    $fetch<{
+      users: (User & {
+        role: ROLE;
+      })[];
+    }>(
+      `/api/school/${route.params.id}/users?page=${teachersPage}&pageSize=${teachersPageSize}&role=TEACHER`
+    ),
+    $fetch<{
+      subjects: Subject[];
+    }>(
+      `/api/school/${route.params.id}/subjects?page=${subjectsPage}&pageSize=${subjectsPageSize}`
+    ),
   ]);
 
   let schedule = null;
 
   if (route.params.subjectId) {
-    schedule = await $client.schedule.getSchedule.query({
-      schoolId: route.params.id as string,
-      yearId: route.params.yearId as string,
-      scheduleId: route.params.subjectId as string,
-    });
+    schedule = await $fetch<
+      SubjectTeacherClass & { students: { studentId: string }[] }
+    >(
+      `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules/${route.params.subjectId}`
+    );
   }
+
   return { students, teachers, subjectsData, schedule };
 });
 
@@ -118,31 +128,21 @@ async function onSubmit(values: Record<string, any>) {
       0
     ),
   });
-  if (!route.params.subjectId) {
-    await $client.schedule.addSchedule.mutate({
-      schoolId: route.params.id as string,
-      yearId: route.params.yearId as string,
-      students: values.students,
-      calendarRule: schedule.toString(),
-      classId: route.params.classId as string,
-      startTime: values.startTime,
-      endTime: values.endTime,
-      teacherId: values.teacherId,
-      subjectId: values.subjectId,
-    });
-  } else {
-    await $client.schedule.editSchedule.mutate({
-      scheduleId: route.params.subjectId as string,
-      schoolId: route.params.id as string,
-      yearId: route.params.yearId as string,
-      students: values.students,
-      calendarRule: schedule.toString(),
-      classId: route.params.classId as string,
-      startTime: values.startTime,
-      endTime: values.endTime,
-      teacherId: values.teacherId,
-      subjectId: values.subjectId,
-    });
+
+  const apiRoute = route.params.subjectId
+    ? `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules/${route.params.subjectId}`
+    : `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules`;
+
+  const method = route.params.subjectId ? "PUT" : "POST";
+
+  const { error } = await useFetch(apiRoute, {
+    method,
+    body: { calendarRule: schedule.toString(), ...values },
+  });
+
+  if (error.value) {
+    // generalError.value = error.value?.message ?? "";
+    return;
   }
 
   return await navigateTo(
@@ -179,12 +179,8 @@ async function onSubmit(values: Record<string, any>) {
               name="teacherId"
               placeholder="Select teacher"
             >
-              <option
-                v-for="item in teachers"
-                :key="item.userId"
-                :value="item.userId"
-              >
-                {{ item.user.firstName }} {{ item.user.lastName }}
+              <option v-for="item in teachers" :key="item.id" :value="item.id">
+                {{ item.firstName }} {{ item.lastName }}
               </option>
             </Select>
           </FormElement>
@@ -225,12 +221,12 @@ async function onSubmit(values: Record<string, any>) {
         <div class="flex flex-col">
           <Checkbox
             v-for="item in students"
-            :id="item.userId"
-            :key="item.userId"
+            :id="item.id"
+            :key="item.id"
             has-border
             name="students"
-            :value="item.userId"
-            :label="`${item.user.firstName} ${item.user.lastName}`"
+            :value="item.id"
+            :label="`${item.firstName} ${item.lastName}`"
           />
         </div>
       </FormElement>

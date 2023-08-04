@@ -6,9 +6,9 @@ const actions = inject(ModalActionSymbol);
 
 <template>
   <div
-    class="absolute right-4 top-4 cursor-pointer"
+    class="absolute right-3 top-3 cursor-pointer"
     @click="actions?.closeModal"
   >
-    <div class="i-heroicons-x-mark" />
+    <div class="i-heroicons-x-mark w-6 h-6" />
   </div>
 </template>
