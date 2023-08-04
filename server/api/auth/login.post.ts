@@ -46,8 +46,10 @@ export default defineEventHandler(async (event) => {
         message: "The provided credentials are invalid.",
       });
     }
-    event.context.session.user = user;
-    await event.context.session.save();
+    const session = await useServerSession(event);
+
+    session.user = user;
+    await session.save();
 
     return {
       hasMfa: !!user.mfa,
@@ -59,6 +61,7 @@ export default defineEventHandler(async (event) => {
       ),
     };
   } catch (e) {
+    console.log(e);
     return createError({
       statusCode: 500,
       statusMessage: "INTERNAL_SERVER_ERROR",

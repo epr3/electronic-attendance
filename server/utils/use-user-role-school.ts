@@ -7,7 +7,7 @@ export async function useUserRoleSchool(
   schoolId: string,
   roles: ROLE[] = [ROLE.ADMIN, ROLE.DIRECTOR, ROLE.TEACHER]
 ) {
-  const user = useServerAuth(event);
+  const user = await useServerAuth(event);
 
   const schoolUser = await prisma.schoolUser.findFirst({
     where: { userId: user.id, schoolId },

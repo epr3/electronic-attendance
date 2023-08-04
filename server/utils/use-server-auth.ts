@@ -1,15 +1,9 @@
-import { User } from "@prisma/client";
 import { type H3Event } from "h3";
+import { User } from "@prisma/client";
 
-declare module "iron-session" {
-  interface IronSessionData {
-    user?: User;
-    mfaVerified?: boolean;
-  }
-}
-
-export function useServerAuth(event: H3Event): User & { mfaVerified: boolean } {
-  if (!event.context.session) {
+export async function useServerAuth(event: H3Event): Promise<User> {
+  const session = await useServerSession(event);
+  if (!session) {
     throw createError({
       statusCode: 401,
       statusMessage: "UNAUTHORIZED",
@@ -17,5 +11,5 @@ export function useServerAuth(event: H3Event): User & { mfaVerified: boolean } {
     });
   }
 
-  return event.context.session.user;
+  return session.user;
 }

@@ -42,46 +42,46 @@ export default defineEventHandler(async (event) => {
                 ],
               },
       };
+    }
 
-      if (includeClass) {
-        filterObject = {
-          ...filterObject,
-          user:
-            role === ROLE.STUDENT
-              ? {
-                  OR: [
-                    {
-                      classes: {
-                        some: {
-                          classId: includeClass as string,
-                        },
+    if (includeClass) {
+      filterObject = {
+        ...filterObject,
+        user:
+          role === ROLE.STUDENT
+            ? {
+                OR: [
+                  {
+                    classes: {
+                      some: {
+                        classId: includeClass as string,
                       },
                     },
-                    {
-                      classes: {
-                        none: {
-                          class: {
-                            schoolYearId: excludeYear as string,
-                          },
-                        },
-                      },
-                    },
-                  ],
-                }
-              : {
-                  OR: [
-                    { headTeacherClass: { id: includeClass as string } },
-                    {
-                      headTeacherClass: {
-                        isNot: {
+                  },
+                  {
+                    classes: {
+                      none: {
+                        class: {
                           schoolYearId: excludeYear as string,
                         },
                       },
                     },
-                  ],
-                },
-        };
-      }
+                  },
+                ],
+              }
+            : {
+                OR: [
+                  { headTeacherClass: { id: includeClass as string } },
+                  {
+                    headTeacherClass: {
+                      isNot: {
+                        schoolYearId: excludeYear as string,
+                      },
+                    },
+                  },
+                ],
+              },
+      };
     }
   }
 

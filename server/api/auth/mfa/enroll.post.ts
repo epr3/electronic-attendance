@@ -2,7 +2,7 @@ import { object, string, boolean } from "zod";
 import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
-  const user = useServerAuth(event);
+  const user = await useServerAuth(event);
   const input = await useValidatedBody(
     event,
     object({

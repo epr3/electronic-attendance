@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 const props = defineProps<{ name: string }>();
 
-const message = useFieldError(props.name);
+const name = computed(() => props.name);
+
+const message = useFieldError(name);
 </script>
 
 <template>

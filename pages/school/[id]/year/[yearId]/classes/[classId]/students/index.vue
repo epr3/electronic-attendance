@@ -1,30 +1,21 @@
 <script lang="ts" setup>
-import { User } from "@prisma/client";
+import { ROLE, User } from "@prisma/client";
 
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
 const route = useRoute();
-const { $client } = useNuxtApp();
+const page = parseInt((route.query.page as string) ?? 1, 10);
+const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
 
-const { data, refresh } = await useAsyncData(
-  `students-${route.params.classId}`,
-  async () => {
-    const students = await $client.user.getStudentsByClass.query({
-      schoolId: route.params.id as string,
-      classId: route.params.classId as string,
-    });
-
-    return { students };
-  }
+const { data, refresh } = await useFetch<{ users: (User & { role: ROLE })[] }>(
+  `/api/school/${route.params.id}/users?page=${page}&pageSize=${pageSize}&role=STUDENT&includeClass=${route.params.classId}`
 );
 
-const students = computed(() =>
-  data.value ? data.value.students.users.map((item) => ({ ...item.user })) : []
-);
+const students = computed(() => (data.value ? data.value.users : []));
 
-const userId = ref("");
+const studentId = ref("");
 
 const columnHeaders = [
   { name: "First Name", value: "firstName" },
@@ -33,6 +24,14 @@ const columnHeaders = [
   { name: "Telephone", value: "telephone" },
   { name: "Verified At", value: "verifiedAt" },
 ] as { name: string; value: keyof User }[];
+
+const deleteStudent = (studentId: string) =>
+  $fetch(
+    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/students/${studentId}`,
+    {
+      method: "DELETE",
+    }
+  );
 </script>
 
 <template>
@@ -66,13 +65,13 @@ const columnHeaders = [
             <TableCell>
               <div class="flex space-x-4">
                 <IconButton color="info" :to="`students/${row.id}`">
-                  <div class="i-heroicons-pencil-square w-6 h-6" />
+                  <div class="i-heroicons-arrows-right-left w-6 h-6" />
                 </IconButton>
                 <IconButton
                   color="error"
                   @click="
                     () => {
-                      userId = row.id;
+                      studentId = row.id;
                       actions?.openModal();
                     }
                   "
@@ -94,33 +93,32 @@ const columnHeaders = [
       <ModalOverlay />
       <ModalContent>
         <ModalHead>
-          <h3 class="text-2xl font-semibold">Delete user</h3>
+          <h3 class="text-2xl font-semibold">Remove student from class</h3>
         </ModalHead>
         <ModalCloseButton />
         <ModalBody>
-          <p>Are you sure you want to delete this user?</p>
+          <p>Are you sure you want to remove the student from this class?</p>
         </ModalBody>
         <ModalFooter>
           <Button
             color="error"
             @click="
               async () => {
-                await $client.user.deleteUser.mutate({
-                  schoolId: route.params.id as string,
-                  userId,
-                });
-                userId = '';
-                await refresh();
-                actions?.closeModal();
+                async () => {
+                  await deleteStudent(studentId);
+                  studentId = '';
+                  await refresh();
+                  actions?.closeModal();
+                };
               }
             "
           >
-            Delete
+            Remove
           </Button>
           <Button
             @click="
               () => {
-                userId = '';
+                studentId = '';
                 actions?.closeModal();
               }
             "

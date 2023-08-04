@@ -29,6 +29,9 @@ dependencies:
   floating-vue:
     specifier: ^2.0.0-beta.24
     version: 2.0.0-beta.24(vue@3.3.4)
+  iron-session:
+    specifier: ^6.3.1
+    version: 6.3.1
   lodash-es:
     specifier: ^4.17.21
     version: 4.17.21
@@ -41,9 +44,6 @@ dependencies:
   modern-errors-http:
     specifier: ^4.0.0
     version: 4.0.0(modern-errors@6.0.0)
-  nuxt-iron-session:
-    specifier: ^0.2.0
-    version: 0.2.0
   otplib:
     specifier: ^12.0.1
     version: 12.0.1
@@ -5938,20 +5938,6 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
-
-  /nuxt-iron-session@0.2.0:
-    resolution: {integrity: sha512-RYlpW9ZNmw5NgvRnL3JTqMcsjdsOrVYaaLW0hhhYeUX63ohUvTermEQ/h2bqR4yVIDxJFpqtnZYOubu0vvhCpw==}
-    dependencies:
-      '@nuxt/kit': 3.6.5
-      defu: 6.1.2
-      iron-session: 6.3.1
-    transitivePeerDependencies:
-      - express
-      - koa
-      - next
-      - rollup
-      - supports-color
-    dev: false
 
   /nuxt@3.6.5(@types/node@20.4.5)(eslint@8.45.0)(sass@1.64.1)(typescript@5.1.6):
     resolution: {integrity: sha512-0A7V8B1HrIXX9IlqPc2w+5ZPXi+7MYa9QVhtuGYuLvjRKoSFANhCoMPRP6pKdoxigM1MBxhLue2VmHA/VbtJCw==}

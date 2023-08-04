@@ -1,7 +1,7 @@
 import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
-  const user = useServerAuth(event);
+  const user = await useServerAuth(event);
   try {
     const userObject = await prisma.user.findFirst({
       where: { id: user.id, verifiedAt: { not: null } },

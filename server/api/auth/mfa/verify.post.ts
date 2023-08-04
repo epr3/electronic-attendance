@@ -3,7 +3,7 @@ import { authenticator } from "otplib";
 import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
-  const user = useServerAuth(event);
+  const user = await useServerAuth(event);
   const input = await useValidatedBody(
     event,
     object({
@@ -28,9 +28,10 @@ export default defineEventHandler(async (event) => {
         message: "The provided code is invalid.",
       });
     }
+    const session = await useServerSession(event);
 
-    event.context.session.mfaVerified = true;
-    await event.context.session.save();
+    session.mfaVerified = true;
+    await session.save();
 
     return sendNoContent(event, 204);
   } catch (e) {

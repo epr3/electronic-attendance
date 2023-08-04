@@ -2,7 +2,7 @@ import { authenticator } from "otplib";
 import { toDataURL } from "qrcode";
 
 export default defineEventHandler(async (event) => {
-  const user = useServerAuth(event);
+  const user = await useServerAuth(event);
 
   const secret = authenticator.generateSecret();
   const otpauth = authenticator.keyuri(
