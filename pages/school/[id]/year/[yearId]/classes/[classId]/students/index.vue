@@ -93,10 +93,10 @@ const deleteStudent = (studentId: string) =>
       :page-size="pageSize"
       :current-page="page"
       :total="count"
-      @page-change="setPage"
-      @page-size-change="setPageSize"
-      @next-page="nextPage"
-      @prev-page="prevPage"
+      @page:set="setPage"
+      @page-size:set="setPageSize"
+      @page:prev="prevPage"
+      @page:next="nextPage"
     />
     <Modal>
       <ModalOverlay />
