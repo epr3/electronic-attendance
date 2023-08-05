@@ -4,7 +4,6 @@ import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
-  const classId = event.context.params!.classId;
   const studentId = event.context.params!.studentId;
 
   const input = await useValidatedBody(
@@ -17,9 +16,9 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    await prisma.classStudent.update({
-      where: { studentId_classId: { studentId, classId } },
-      data: { classId: input.classId },
+    // TODO: remove the join table record if the student has events for the class
+    await prisma.classStudent.create({
+      data: { classId: input.classId, studentId },
     });
     return sendNoContent(event, 204);
   } catch (e) {
