@@ -15,8 +15,8 @@ const { data, refresh } = await useFetch<{
   count: number;
 }>(`/api/school/${route.params.id}/users`, {
   query: {
-    page: toRef(page),
-    pageSize: toRef(pageSize),
+    page,
+    pageSize,
   },
 });
 

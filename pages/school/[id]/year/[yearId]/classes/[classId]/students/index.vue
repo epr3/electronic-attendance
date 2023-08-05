@@ -6,23 +6,29 @@ import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 const actions = inject(ModalActionSymbol);
 
 const route = useRoute();
-const page = parseInt((route.query.page as string) ?? 1, 10);
-const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
+const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
+  usePagination();
 
-const { data, refresh } = await useFetch<{ users: (User & { role: ROLE })[] }>(
-  `/api/school/${route.params.id}/users?page=${page}&pageSize=${pageSize}&role=STUDENT&includeClass=${route.params.classId}`
-);
+const { data, refresh } = await useFetch<{
+  users: (User & { role: ROLE })[];
+  count: number;
+}>(`/api/school/${route.params.id}/users`, {
+  query: {
+    page,
+    pageSize,
+    role: ROLE.STUDENT,
+    includeClass: route.params.classId,
+  },
+});
 
 const students = computed(() => (data.value ? data.value.users : []));
+const count = computed(() => (data.value ? data.value.count : 0));
 
 const studentId = ref("");
 
 const columnHeaders = [
   { name: "First Name", value: "firstName" },
   { name: "Last Name", value: "lastName" },
-  { name: "Email", value: "email" },
-  { name: "Telephone", value: "telephone" },
-  { name: "Verified At", value: "verifiedAt" },
 ] as { name: string; value: keyof User }[];
 
 const deleteStudent = (studentId: string) =>
@@ -53,42 +59,45 @@ const deleteStudent = (studentId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <template v-if="students.length">
-          <TableRow v-for="row in students" :key="row.id">
-            <TableCell
-              v-for="cell in columnHeaders"
-              :key="`cell-${cell}-${row.id}`"
-            >
-              {{ row[cell.value] }}
-            </TableCell>
+        <TableRow v-for="row in students" :key="row.id">
+          <TableCell
+            v-for="cell in columnHeaders"
+            :key="`cell-${cell}-${row.id}`"
+          >
+            {{ row[cell.value] }}
+          </TableCell>
 
-            <TableCell>
-              <div class="flex space-x-4">
-                <IconButton color="info" :to="`students/${row.id}`">
-                  <div class="i-heroicons-arrows-right-left w-6 h-6" />
-                </IconButton>
-                <IconButton
-                  color="error"
-                  @click="
-                    () => {
-                      studentId = row.id;
-                      actions?.openModal();
-                    }
-                  "
-                >
-                  <div class="i-heroicons-trash w-6 h-6" />
-                </IconButton>
-              </div>
-            </TableCell>
-          </TableRow>
-        </template>
-        <TableRow v-else>
-          <TableCell :colspan="columnHeaders.length + 1">
-            No data to display.
+          <TableCell>
+            <div class="flex space-x-4">
+              <IconButton color="info" :to="`students/${row.id}`">
+                <div class="i-heroicons-arrows-right-left w-6 h-6" />
+              </IconButton>
+              <IconButton
+                color="error"
+                @click="
+                  () => {
+                    studentId = row.id;
+                    actions?.openModal();
+                  }
+                "
+              >
+                <div class="i-heroicons-trash w-6 h-6" />
+              </IconButton>
+            </div>
           </TableCell>
         </TableRow>
       </TableBody>
     </Table>
+    <Pagination
+      v-if="students.length"
+      :page-size="pageSize"
+      :current-page="page"
+      :total="count"
+      @page-change="setPage"
+      @page-size-change="setPageSize"
+      @next-page="nextPage"
+      @prev-page="prevPage"
+    />
     <Modal>
       <ModalOverlay />
       <ModalContent>

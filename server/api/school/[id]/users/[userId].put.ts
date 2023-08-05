@@ -4,7 +4,7 @@ import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
-  const userId = event.context.params!.subjectId;
+  const userId = event.context.params!.userId;
 
   const input = await useValidatedBody(
     event,

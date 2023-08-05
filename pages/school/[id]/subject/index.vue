@@ -5,14 +5,22 @@ import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 const actions = inject(ModalActionSymbol);
 
 const route = useRoute();
-const page = parseInt((route.query.page as string) ?? 1, 10);
-const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
 
-const { data, refresh } = await useFetch<{ subjects: Subject[] }>(
-  `/api/school/${route.params.id}/subjects?page=${page}&pageSize=${pageSize}`
-);
+const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
+  usePagination();
+
+const { data, refresh } = await useFetch<{
+  subjects: Subject[];
+  count: number;
+}>(`/api/school/${route.params.id}/subjects`, {
+  query: {
+    page,
+    pageSize,
+  },
+});
 
 const subjects = computed(() => (data.value ? data.value.subjects : []));
+const count = computed(() => (data.value ? data.value.count : 0));
 
 const subjectId = ref("");
 
@@ -42,42 +50,45 @@ const deleteSubject = (subjectId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <template v-if="subjects.length">
-          <TableRow v-for="row in subjects" :key="row.id">
-            <TableCell
-              v-for="cell in columnHeaders"
-              :key="`cell-${cell}-${row.id}`"
-            >
-              {{ row[cell.value] }}
-            </TableCell>
+        <TableRow v-for="row in subjects" :key="row.id">
+          <TableCell
+            v-for="cell in columnHeaders"
+            :key="`cell-${cell}-${row.id}`"
+          >
+            {{ row[cell.value] }}
+          </TableCell>
 
-            <TableCell>
-              <div class="flex space-x-4">
-                <IconButton :to="`subject/${row.id}`">
-                  <div class="i-heroicons-pencil-square w-6 h-6" />
-                </IconButton>
-                <IconButton
-                  color="error"
-                  @click="
-                    () => {
-                      subjectId = row.id;
-                      actions?.openModal();
-                    }
-                  "
-                >
-                  <div class="i-heroicons-trash w-6 h-6" />
-                </IconButton>
-              </div>
-            </TableCell>
-          </TableRow>
-        </template>
-        <TableRow v-else>
-          <TableCell :colspan="columnHeaders.length + 1">
-            No data to display.
+          <TableCell>
+            <div class="flex space-x-4">
+              <IconButton :to="`subject/${row.id}`">
+                <div class="i-heroicons-pencil-square w-6 h-6" />
+              </IconButton>
+              <IconButton
+                color="error"
+                @click="
+                  () => {
+                    subjectId = row.id;
+                    actions?.openModal();
+                  }
+                "
+              >
+                <div class="i-heroicons-trash w-6 h-6" />
+              </IconButton>
+            </div>
           </TableCell>
         </TableRow>
       </TableBody>
     </Table>
+    <Pagination
+      v-if="subjects.length"
+      :page-size="pageSize"
+      :current-page="page"
+      :total="count"
+      @page-size:set="setPageSize"
+      @page:set="setPage"
+      @page:next="nextPage"
+      @page:prev="prevPage"
+    />
     <Modal>
       <ModalOverlay />
       <ModalContent>

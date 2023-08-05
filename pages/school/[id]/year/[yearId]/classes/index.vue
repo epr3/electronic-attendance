@@ -5,8 +5,8 @@ import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 const actions = inject(ModalActionSymbol);
 
 const route = useRoute();
-const page = parseInt((route.query.page as string) ?? 1, 10);
-const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
+const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
+  usePagination();
 
 const { data, refresh } = await useFetch<{
   classes: (Class & {
@@ -15,9 +15,13 @@ const { data, refresh } = await useFetch<{
     };
     headTeacher: User;
   })[];
-}>(
-  `/api/school/${route.params.id}/years/${route.params.yearId}/classes?page=${page}&pageSize=${pageSize}`
-);
+  count: number;
+}>(`/api/school/${route.params.id}/years/${route.params.yearId}/classes`, {
+  query: {
+    page,
+    pageSize,
+  },
+});
 
 const classes = computed(() =>
   data.value
@@ -31,6 +35,8 @@ const classes = computed(() =>
       })
     : []
 );
+
+const count = computed(() => (data.value ? data.value.count : 0));
 
 const classId = ref("");
 
@@ -68,59 +74,62 @@ const deleteClass = (classId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <template v-if="classes.length">
-          <TableRow v-for="row in classes" :key="row.id">
-            <TableCell
-              v-for="cell in columnHeaders"
-              :key="`cell-${cell.value}-${row.id}`"
-            >
-              {{ row[cell.value as keyof typeof row] }}
-            </TableCell>
+        <TableRow v-for="row in classes" :key="row.id">
+          <TableCell
+            v-for="cell in columnHeaders"
+            :key="`cell-${cell.value}-${row.id}`"
+          >
+            {{ row[cell.value as keyof typeof row] }}
+          </TableCell>
 
-            <TableCell>
-              <div class="flex space-x-4">
-                <IconButton
-                  color="success"
-                  size="lg"
-                  :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/students`"
-                >
-                  <div class="i-heroicons-users w-6 h-6" />
-                </IconButton>
-                <IconButton
-                  color="success"
-                  :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/subjects`"
-                >
-                  <div class="i-heroicons-academic-cap w-6 h-6" />
-                </IconButton>
+          <TableCell>
+            <div class="flex space-x-4">
+              <IconButton
+                color="success"
+                size="lg"
+                :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/students`"
+              >
+                <div class="i-heroicons-users w-6 h-6" />
+              </IconButton>
+              <IconButton
+                color="success"
+                :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/subjects`"
+              >
+                <div class="i-heroicons-academic-cap w-6 h-6" />
+              </IconButton>
 
-                <IconButton
-                  color="info"
-                  :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}`"
-                >
-                  <div class="i-heroicons-pencil-square w-6 h-6" />
-                </IconButton>
-                <IconButton
-                  color="error"
-                  @click="
-                    () => {
-                      classId = row.id;
-                      actions?.openModal();
-                    }
-                  "
-                >
-                  <div class="i-heroicons-trash w-6 h-6" />
-                </IconButton>
-              </div>
-            </TableCell>
-          </TableRow>
-        </template>
-        <TableRow v-else>
-          <TableCell :colspan="columnHeaders.length + 1">
-            No data to display.
+              <IconButton
+                color="info"
+                :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}`"
+              >
+                <div class="i-heroicons-pencil-square w-6 h-6" />
+              </IconButton>
+              <IconButton
+                color="error"
+                @click="
+                  () => {
+                    classId = row.id;
+                    actions?.openModal();
+                  }
+                "
+              >
+                <div class="i-heroicons-trash w-6 h-6" />
+              </IconButton>
+            </div>
           </TableCell>
         </TableRow>
       </TableBody>
     </Table>
+    <Pagination
+      v-if="classes.length"
+      :page-size="pageSize"
+      :current-page="page"
+      :total="count"
+      @page:set="setPage"
+      @page-size:set="setPageSize"
+      @page:prev="prevPage"
+      @page:next="nextPage"
+    />
     <Modal>
       <ModalOverlay />
       <ModalContent>

@@ -7,12 +7,19 @@ const actions = inject(ModalActionSymbol);
 
 const { $dayjs } = useNuxtApp();
 const route = useRoute();
-const page = parseInt((route.query.page as string) ?? 1, 10);
-const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
 
-const { data, refresh } = await useFetch<{ years: SchoolYear[] }>(
-  `/api/school/${route.params.id}/years?page=${page}&pageSize=${pageSize}`
-);
+const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
+  usePagination();
+
+const { data, refresh } = await useFetch<{
+  years: SchoolYear[];
+  count: number;
+}>(`/api/school/${route.params.id}/years`, {
+  query: {
+    page,
+    pageSize,
+  },
+});
 
 const years = computed(() =>
   data.value
@@ -26,6 +33,7 @@ const years = computed(() =>
       })
     : []
 );
+const count = computed(() => (data.value ? data.value.count : 0));
 
 const yearId = ref("");
 
@@ -60,45 +68,54 @@ const deleteYear = (yearId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <template v-if="years.length">
-          <TableRow v-for="row in years" :key="row.id">
-            <TableCell
-              v-for="cell in columnHeaders"
-              :key="`cell-${cell}-${row.id}`"
-            >
-              {{ row[cell.value as keyof typeof row] }}
-            </TableCell>
+        <TableRow v-for="row in years" :key="row.id">
+          <TableCell
+            v-for="cell in columnHeaders"
+            :key="`cell-${cell}-${row.id}`"
+          >
+            {{ row[cell.value as keyof typeof row] }}
+          </TableCell>
 
-            <TableCell>
-              <div class="flex space-x-4">
-                <IconButton color="success" :to="`year/${row.id}/classes`">
-                  <div class="i-heroicons-eye w-6 h-6" />
-                </IconButton>
-                <IconButton color="info" :to="`year/${row.id}`">
-                  <div class="i-heroicons-pencil-square w-6 h-6" />
-                </IconButton>
-                <IconButton
-                  color="error"
-                  @click="
-                    () => {
-                      yearId = row.id;
-                      actions?.openModal();
-                    }
-                  "
-                >
-                  <div class="i-heroicons-trash w-6 h-6" />
-                </IconButton>
-              </div>
-            </TableCell>
-          </TableRow>
-        </template>
-        <TableRow v-else>
-          <TableCell :colspan="columnHeaders.length + 1">
-            No data to display.
+          <TableCell>
+            <div class="flex space-x-4">
+              <IconButton
+                color="success"
+                :to="`/school/${route.params.id}/year/${row.id}/classes`"
+              >
+                <div class="i-heroicons-eye w-6 h-6" />
+              </IconButton>
+              <IconButton
+                color="info"
+                :to="`/school/${route.params.id}/year/${row.id}`"
+              >
+                <div class="i-heroicons-pencil-square w-6 h-6" />
+              </IconButton>
+              <IconButton
+                color="error"
+                @click="
+                  () => {
+                    yearId = row.id;
+                    actions?.openModal();
+                  }
+                "
+              >
+                <div class="i-heroicons-trash w-6 h-6" />
+              </IconButton>
+            </div>
           </TableCell>
         </TableRow>
       </TableBody>
     </Table>
+    <Pagination
+      v-if="years.length"
+      :page-size="pageSize"
+      :current-page="page"
+      :total="count"
+      @page:set="setPage"
+      @page-size:set="setPageSize"
+      @page:prev="prevPage"
+      @page:next="nextPage"
+    />
     <Modal>
       <ModalOverlay />
       <ModalContent>

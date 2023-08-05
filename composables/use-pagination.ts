@@ -1,4 +1,4 @@
-export const usePagination = () => {
+export const usePagination = ({ navigation } = { navigation: false }) => {
   const route = useRoute();
 
   const page = ref(parseInt((route.query.page as string) ?? 1, 10));
@@ -20,12 +20,14 @@ export const usePagination = () => {
     page.value -= 1;
   };
 
-  watch([page, pageSize], async () => {
-    await navigateTo({
-      path: "",
-      query: { page: page.value, pageSize: pageSize.value },
+  if (navigation) {
+    watch([page, pageSize], async () => {
+      await navigateTo({
+        path: "",
+        query: { page: page.value, pageSize: pageSize.value },
+      });
     });
-  });
+  }
 
   return { page, pageSize, setPageSize, setPage, nextPage, prevPage };
 };
