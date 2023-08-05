@@ -67,10 +67,10 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
     <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
       <div class="flex space-x-4">
-        <FormElement name="firstName">
+        <FormElement class="basis-1/2" name="firstName">
           <Input label="First Name" name="firstName" />
         </FormElement>
-        <FormElement name="lastName">
+        <FormElement class="basis-1/2" name="lastName">
           <Input label="Last Name" name="lastName" />
         </FormElement>
       </div>

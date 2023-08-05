@@ -13,6 +13,8 @@ defineEmits<{
 }>();
 
 const totalPages = computed(() => Math.ceil(props.total / props.pageSize));
+
+const pageSizes = [5, 10, 25, 30, 40];
 </script>
 
 <template>
@@ -42,10 +44,9 @@ const totalPages = computed(() => Math.ceil(props.total / props.pageSize));
       name="pageSize"
       @update:model-value="(data) => $emit('page-size:set', data)"
     >
-      <option value="3">3</option>
-      <option value="12">12</option>
-      <option value="24">24</option>
-      <option value="36">36</option>
+      <option v-for="item in pageSizes" :key="`pageSize-${item}`" :value="item">
+        {{ item }}
+      </option>
     </Select>
   </div>
 </template>

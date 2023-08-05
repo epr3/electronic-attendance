@@ -2,7 +2,7 @@ export const usePagination = () => {
   const route = useRoute();
 
   const page = ref(parseInt((route.query.page as string) ?? 1, 10));
-  const pageSize = ref(parseInt((route.query.pageSize as string) ?? 12, 10));
+  const pageSize = ref(parseInt((route.query.pageSize as string) ?? 5, 10));
 
   const setPageSize = (data: string) => {
     pageSize.value = parseInt(data);
