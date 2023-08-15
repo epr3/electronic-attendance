@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
 
+const { $routes, $api } = useNuxtApp();
+
 const generalError = ref("");
 
 const { handleSubmit, isSubmitting } = useForm({
@@ -29,7 +31,7 @@ const onSubmit = handleSubmit(async (values) => {
   } = values;
 
   const { error } = await useFetch<null, { message: string }>(
-    "/api/auth/register",
+    $api.auth.register,
     {
       method: "POST",
       body: {
@@ -49,7 +51,7 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
 
-  return await navigateTo(`/register/success?email=${email}`);
+  return await navigateTo(`${$routes.auth.registerSuccess}?email=${email}`);
 });
 </script>
 
@@ -90,7 +92,7 @@ const onSubmit = handleSubmit(async (values) => {
       </form>
       <p>
         Already have an account? Log in
-        <StyledLink to="/login">here</StyledLink>!
+        <StyledLink :to="$routes.auth.login">here</StyledLink>!
       </p>
     </div>
   </Card>

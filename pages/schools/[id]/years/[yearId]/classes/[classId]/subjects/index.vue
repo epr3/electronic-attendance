@@ -3,23 +3,36 @@ import { rrulestr } from "rrule";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const route = useRoute();
-const { $dayjs } = useNuxtApp();
+const { $dayjs, $routes, $api } = useNuxtApp();
 
 const actions = inject(ModalActionSymbol);
 const subjectId = ref("");
 
-const page = parseInt((route.query.page as string) ?? 1, 10);
-const pageSize = parseInt((route.query.pageSize as string) ?? 12, 10);
+const { page, pageSize } = usePagination();
 
 const { data, refresh } = await useFetch(
-  `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules?page=${page}&pageSize=${pageSize}`
+  $api.years.classes.schedules.index({
+    schoolId: route.params.id as string,
+    yearId: route.params.yearId as string,
+    classId: route.params.classId as string,
+  }),
+  {
+    query: {
+      page,
+      pageSize,
+    },
+  }
 );
 
 const schedules = computed(() => data.value?.schedules);
 
 const deleteSchedule = (scheduleId: string) =>
   $fetch(
-    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules/${scheduleId}`,
+    $api.years.classes.schedules.id(scheduleId)({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+      classId: route.params.classId as string,
+    }),
     {
       method: "DELETE",
     }
@@ -66,14 +79,26 @@ const returnDateFromRrule = (rule: string) => {
           <IconButton
             color="success"
             size="lg"
-            :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects/${item.id}/students`"
+            :to="
+              $routes.years.classes.subjects.students(item.id)({
+                schoolId: route.params.id as string,
+                yearId: route.params.yearId as string,
+                classId: route.params.classId as string,
+              })
+            "
           >
             <div class="i-heroicons-users w-6 h-6" />
           </IconButton>
           <IconButton
             color="info"
             size="lg"
-            :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects/${item.id}`"
+            :to="
+              $routes.years.classes.subjects.get(item.id)({
+                schoolId: route.params.id as string,
+                yearId: route.params.yearId as string,
+                classId: route.params.classId as string,
+              })
+            "
           >
             <div class="i-heroicons-pencil-square w-6 h-6" />
           </IconButton>
@@ -95,7 +120,7 @@ const returnDateFromRrule = (rule: string) => {
     <Card class="basis-full md:basis-1/4">
       <div class="flex items-center justify-center min-h-[200px]">
         <Button
-          :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects/new`"
+          :to="`/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/subjects/new`"
           color="success"
         >
           <div class="flex items-center gap-2">

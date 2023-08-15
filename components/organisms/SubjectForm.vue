@@ -5,12 +5,15 @@ import { object, string } from "zod";
 
 const route = useRoute();
 const router = useRouter();
+const { $api, $routes } = useNuxtApp();
 
 const subject = ref({});
 
-if (route.params.userId) {
+if (route.params.subjectId) {
   subject.value = await useFetch<Subject>(
-    `/api/auth/school/${route.params.id}/subjects/${route.params.userId}`
+    $api.subjects.id(route.params.subjectId as string)({
+      schoolId: route.params.id as string,
+    })
   );
 }
 
@@ -29,8 +32,10 @@ const onSubmit = handleSubmit(async (values) => {
   const { name } = values;
 
   const apiRoute = route.params.subjectId
-    ? `/api/school/${route.params.id}/subjects/${route.params.subjectId}`
-    : `/api/school/${route.params.id}/subjects`;
+    ? $api.subjects.id(route.params.subjectId as string)({
+        schoolId: route.params.id as string,
+      })
+    : $api.subjects.index({ schoolId: route.params.id as string });
 
   const method = route.params.subjectId ? "PUT" : "POST";
 
@@ -43,7 +48,9 @@ const onSubmit = handleSubmit(async (values) => {
     generalError.value = error.value?.message ?? "";
     return;
   }
-  await navigateTo(`/school/${route.params.id}/subject`);
+  await navigateTo(
+    $routes.subjects.index({ schoolId: route.params.id as string })
+  );
 });
 </script>
 

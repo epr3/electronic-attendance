@@ -1,49 +1,63 @@
 <script lang="ts" setup>
-import { User, ROLE } from "@prisma/client";
-
+import { SchoolYear } from "@prisma/client";
+import { rrulestr } from "rrule";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
+const { $dayjs, $routes, $api } = useNuxtApp();
 const route = useRoute();
 
 const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
-  users: (User & { role: ROLE })[];
+  years: SchoolYear[];
   count: number;
-}>(`/api/school/${route.params.id}/users`, {
+}>($api.years.index({ schoolId: route.params.id as string }), {
   query: {
     page,
     pageSize,
   },
 });
 
-const users = computed(() => (data.value ? data.value.users : []));
+const years = computed(() =>
+  data.value
+    ? data.value.years.map((item) => {
+        const rRule = rrulestr(item.schoolDateRule);
+        return {
+          id: item.id,
+          startDate: $dayjs(rRule.options.dtstart).format("YYYY-MM-DD"),
+          endDate: $dayjs(rRule.options.until).format("YYYY-MM-DD"),
+        };
+      })
+    : []
+);
 const count = computed(() => (data.value ? data.value.count : 0));
 
-const userId = ref("");
+const yearId = ref("");
 
 const columnHeaders = [
-  { name: "First Name", value: "firstName" },
-  { name: "Last Name", value: "lastName" },
-  { name: "Email", value: "email" },
-  { name: "Role", value: "role" },
-  { name: "Telephone", value: "telephone" },
-  { name: "Verified At", value: "verifiedAt" },
-] as { name: string; value: keyof ({ role: ROLE } & User) }[];
+  { name: "Start Date", value: "startDate" },
+  { name: "End Date", value: "endDate" },
+  // { name: "Holidays", value: "email" },
+];
 
-const deleteUser = (userId: string) =>
-  $fetch(`/api/school/${route.params.id}/users/${userId}`, {
+const deleteYear = (yearId: string) =>
+  $fetch($api.years.id(yearId)({ schoolId: route.params.id as string }), {
     method: "DELETE",
   });
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <Button color="success" class="self-start" to="user/new"> Add user </Button>
-    <div></div>
+    <Button
+      color="success"
+      class="self-start"
+      :to="$routes.years.new({ schoolId: route.params.id as string })"
+    >
+      Add year
+    </Button>
     <Table full-width>
       <thead>
         <TableRow>
@@ -54,29 +68,42 @@ const deleteUser = (userId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <TableRow v-for="row in users" :key="row.id">
+        <TableRow v-for="row in years" :key="row.id">
           <TableCell
             v-for="cell in columnHeaders"
             :key="`cell-${cell}-${row.id}`"
           >
-            {{
-              cell.value === "role"
-                ? row[cell.value].slice(0, 1).toUpperCase() +
-                  row[cell.value].slice(1).toLowerCase()
-                : row[cell.value]
-            }}
+            {{ row[cell.value as keyof typeof row] }}
           </TableCell>
 
           <TableCell>
             <div class="flex space-x-4">
-              <IconButton color="info" :to="`user/${row.id}`">
+              <IconButton
+                color="success"
+                :to="
+                  $routes.years.classes.index({
+                    schoolId: route.params.id as string,
+                    yearId: row.id,
+                  })
+                "
+              >
+                <div class="i-heroicons-eye w-6 h-6" />
+              </IconButton>
+              <IconButton
+                color="info"
+                :to="
+                  $routes.years.get(row.id)({
+                    schoolId: route.params.id as string,
+                  })
+                "
+              >
                 <div class="i-heroicons-pencil-square w-6 h-6" />
               </IconButton>
               <IconButton
                 color="error"
                 @click="
                   () => {
-                    userId = row.id;
+                    yearId = row.id;
                     actions?.openModal();
                   }
                 "
@@ -89,32 +116,32 @@ const deleteUser = (userId: string) =>
       </TableBody>
     </Table>
     <Pagination
-      v-if="users.length"
+      v-if="years.length"
       :page-size="pageSize"
       :current-page="page"
       :total="count"
-      @page-size:set="setPageSize"
       @page:set="setPage"
-      @page:next="nextPage"
+      @page-size:set="setPageSize"
       @page:prev="prevPage"
+      @page:next="nextPage"
     />
     <Modal>
       <ModalOverlay />
       <ModalContent>
         <ModalHead>
-          <h3 class="text-2xl font-semibold">Delete user</h3>
+          <h3 class="text-2xl font-semibold">Delete year</h3>
         </ModalHead>
         <ModalCloseButton />
         <ModalBody>
-          <p>Are you sure you want to delete this user?</p>
+          <p>Are you sure you want to delete this year?</p>
         </ModalBody>
         <ModalFooter>
           <Button
             color="error"
             @click="
               async () => {
-                await deleteUser(userId);
-                userId = '';
+                await deleteYear(yearId);
+                yearId = '';
                 await refresh();
                 actions?.closeModal();
               }
@@ -125,7 +152,7 @@ const deleteUser = (userId: string) =>
           <Button
             @click="
               () => {
-                userId = '';
+                yearId = '';
                 actions?.closeModal();
               }
             "

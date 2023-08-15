@@ -5,6 +5,8 @@ import { Class, ClassStudent, ROLE, User } from "@prisma/client";
 const route = useRoute();
 const router = useRouter();
 
+const { $api, $routes } = useNuxtApp();
+
 const studentsPage = 1;
 const studentsPageSize = 12;
 const headTeacherPage = 1;
@@ -18,16 +20,41 @@ const { data } = await useAsyncData<{
 }>(
   "classForm" + route.params.classId ? `-${route.params.classId}` : "",
   async () => {
-    const apiUrl = route.params.classId
-      ? `/api/school/${route.params.id}/users?excludeYear=${route.params.yearId}&includeClass=${route.params.classId}`
-      : `/api/school/${route.params.id}/users?excludeYear=${route.params.yearId}`;
+    const apiObject = route.params.classId
+      ? {
+          route: $routes.users.index({
+            schoolId: route.params.id as string,
+          }),
+          query: {
+            excludeYear: route.params.yearId as string,
+            includeClass: route.params.classId as string,
+          },
+        }
+      : {
+          route: $routes.users.index({
+            schoolId: route.params.id as string,
+          }),
+          query: {
+            excludeYear: route.params.yearId as string,
+          },
+        };
     const [students, teachers] = await Promise.all([
-      $fetch<{ users: (User & { role: ROLE })[] }>(
-        `${apiUrl}&page=${studentsPage}&pageSize=${studentsPageSize}&role=${ROLE.STUDENT}`
-      ),
-      $fetch<{ users: (User & { role: ROLE })[] }>(
-        `${apiUrl}&page=${headTeacherPage}&pageSize=${headTeacherPageSize}&role=${ROLE.TEACHER}`
-      ),
+      $fetch<{ users: (User & { role: ROLE })[] }>(apiObject.route, {
+        query: {
+          ...apiObject.query,
+          page: studentsPage,
+          pageSize: studentsPageSize,
+          role: ROLE.STUDENT,
+        },
+      }),
+      $fetch<{ users: (User & { role: ROLE })[] }>(apiObject.route, {
+        query: {
+          ...apiObject.query,
+          page: headTeacherPage,
+          pageSize: headTeacherPageSize,
+          role: ROLE.TEACHER,
+        },
+      }),
     ]);
 
     return { students, teachers };
@@ -36,7 +63,10 @@ const { data } = await useAsyncData<{
 
 if (route.params.classId) {
   const { data } = await useFetch<Class & { students: ClassStudent[] }>(
-    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}`
+    $api.years.classes.id(route.params.classId as string)({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+    })
   );
   classObject.value = data.value;
 }
@@ -66,8 +96,14 @@ const { handleSubmit, isSubmitting } = useForm({
 const onSubmit = handleSubmit(async (values) => {
   const { title, headTeacherId, students } = values;
   const apiRoute = route.params.classId
-    ? `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}`
-    : `/api/school/${route.params.id}/years/${route.params.yearId}/classes`;
+    ? $api.years.classes.id(route.params.classId as string)({
+        schoolId: route.params.id as string,
+        yearId: route.params.yearId as string,
+      })
+    : $api.years.classes.index({
+        schoolId: route.params.id as string,
+        yearId: route.params.yearId as string,
+      });
 
   const method = route.params.classId ? "PUT" : "POST";
 
@@ -81,7 +117,10 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
   return await navigateTo(
-    `/school/${route.params.id}/year/${route.params.yearId}/classes`
+    $routes.years.classes.index({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+    })
   );
 });
 </script>

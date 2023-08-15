@@ -5,18 +5,20 @@ definePageMeta({
 
 const route = useRoute();
 
+const { $routes } = useNuxtApp();
+
 const tabList = [
   {
     name: "Personnel",
-    href: `/school/${route.params.id}/user`,
+    href: $routes.users.index({ schoolId: route.params.id as string }),
   },
   {
     name: "Subjects",
-    href: `/school/${route.params.id}/subject`,
+    href: $routes.subjects.index({ schoolId: route.params.id as string }),
   },
   {
     name: "Years",
-    href: `/school/${route.params.id}/year`,
+    href: $routes.years.index({ schoolId: route.params.id as string }),
   },
 ];
 </script>

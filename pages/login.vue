@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
 
+const { $routes, $api } = useNuxtApp();
+
 const generalError = ref("");
 
 const { handleSubmit, isSubmitting } = useForm({
@@ -19,7 +21,7 @@ const onSubmit = handleSubmit(async (values) => {
       mfaRequired: boolean;
     },
     { message: string }
-  >("/api/auth/login", {
+  >($api.auth.login, {
     method: "POST",
     body: { email: values.email, password: values.password },
   });
@@ -57,7 +59,7 @@ const onSubmit = handleSubmit(async (values) => {
       </form>
       <p>
         Don't have an account? Create one
-        <StyledLink to="/register">here</StyledLink>!
+        <StyledLink :to="$routes.auth.register">here</StyledLink>!
       </p>
     </div>
   </Card>

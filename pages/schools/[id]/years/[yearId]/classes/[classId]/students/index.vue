@@ -1,54 +1,44 @@
 <script lang="ts" setup>
-import { Class, User } from "@prisma/client";
+import { ROLE, User } from "@prisma/client";
+
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
 const route = useRoute();
+const { $api, $routes } = useNuxtApp();
 const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
-  classes: (Class & {
-    _count: {
-      students: number;
-    };
-    headTeacher: User;
-  })[];
+  users: (User & { role: ROLE })[];
   count: number;
-}>(`/api/school/${route.params.id}/years/${route.params.yearId}/classes`, {
+}>(`/api/school/${route.params.id}/users`, {
   query: {
     page,
     pageSize,
+    role: ROLE.STUDENT,
+    includeClass: route.params.classId,
   },
 });
 
-const classes = computed(() =>
-  data.value
-    ? data.value.classes.map((item) => {
-        return {
-          id: item.id,
-          title: item.title,
-          headTeacher: `${item.headTeacher.firstName} ${item.headTeacher.lastName}`,
-          noOfStudents: item._count.students,
-        };
-      })
-    : []
-);
-
+const students = computed(() => (data.value ? data.value.users : []));
 const count = computed(() => (data.value ? data.value.count : 0));
 
-const classId = ref("");
+const studentId = ref("");
 
 const columnHeaders = [
-  { name: "Class Title", value: "title" },
-  { name: "Head Teacher", value: "headTeacher" },
-  { name: "No of students", value: "noOfStudents" },
-];
+  { name: "First Name", value: "firstName" },
+  { name: "Last Name", value: "lastName" },
+] as { name: string; value: keyof User }[];
 
-const deleteClass = (classId: string) =>
+const deleteStudent = (studentId: string) =>
   $fetch(
-    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${classId}`,
+    $api.years.classes.students.id(studentId)({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+      classId: route.params.classId as string,
+    }),
     {
       method: "DELETE",
     }
@@ -60,9 +50,15 @@ const deleteClass = (classId: string) =>
     <Button
       color="success"
       class="self-start"
-      :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/new`"
+      :to="
+        $routes.years.classes.students.new({
+          schoolId: route.params.id as string,
+          yearId: route.params.yearId as string,
+          classId: route.params.classId as string,
+        })
+      "
     >
-      Add class
+      Add student
     </Button>
     <Table full-width>
       <thead>
@@ -74,41 +70,24 @@ const deleteClass = (classId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <TableRow v-for="row in classes" :key="row.id">
+        <TableRow v-for="row in students" :key="row.id">
           <TableCell
             v-for="cell in columnHeaders"
-            :key="`cell-${cell.value}-${row.id}`"
+            :key="`cell-${cell}-${row.id}`"
           >
-            {{ row[cell.value as keyof typeof row] }}
+            {{ row[cell.value] }}
           </TableCell>
 
           <TableCell>
             <div class="flex space-x-4">
-              <IconButton
-                color="success"
-                size="lg"
-                :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/students`"
-              >
-                <div class="i-heroicons-users w-6 h-6" />
-              </IconButton>
-              <IconButton
-                color="success"
-                :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}/subjects`"
-              >
-                <div class="i-heroicons-academic-cap w-6 h-6" />
-              </IconButton>
-
-              <IconButton
-                color="info"
-                :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${row.id}`"
-              >
-                <div class="i-heroicons-pencil-square w-6 h-6" />
+              <IconButton color="info" :to="`students/${row.id}`">
+                <div class="i-heroicons-arrows-right-left w-6 h-6" />
               </IconButton>
               <IconButton
                 color="error"
                 @click="
                   () => {
-                    classId = row.id;
+                    studentId = row.id;
                     actions?.openModal();
                   }
                 "
@@ -121,7 +100,7 @@ const deleteClass = (classId: string) =>
       </TableBody>
     </Table>
     <Pagination
-      v-if="classes.length"
+      v-if="students.length"
       :page-size="pageSize"
       :current-page="page"
       :total="count"
@@ -134,30 +113,32 @@ const deleteClass = (classId: string) =>
       <ModalOverlay />
       <ModalContent>
         <ModalHead>
-          <h3 class="text-2xl font-semibold">Delete year</h3>
+          <h3 class="text-2xl font-semibold">Remove student from class</h3>
         </ModalHead>
         <ModalCloseButton />
         <ModalBody>
-          <p>Are you sure you want to delete this year?</p>
+          <p>Are you sure you want to remove the student from this class?</p>
         </ModalBody>
         <ModalFooter>
           <Button
             color="error"
             @click="
               async () => {
-                await deleteClass(classId);
-                classId = '';
-                await refresh();
-                actions?.closeModal();
+                async () => {
+                  await deleteStudent(studentId);
+                  studentId = '';
+                  await refresh();
+                  actions?.closeModal();
+                };
               }
             "
           >
-            Delete
+            Remove
           </Button>
           <Button
             @click="
               () => {
-                classId = '';
+                studentId = '';
                 actions?.closeModal();
               }
             "

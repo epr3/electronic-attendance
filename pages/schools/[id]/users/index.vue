@@ -1,43 +1,44 @@
 <script lang="ts" setup>
-import { ROLE, User } from "@prisma/client";
+import { User, ROLE } from "@prisma/client";
 
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
 const route = useRoute();
+const { $routes, $api } = useNuxtApp();
+
 const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
   users: (User & { role: ROLE })[];
   count: number;
-}>(`/api/school/${route.params.id}/users`, {
+}>($api.users.index({ schoolId: route.params.id as string }), {
   query: {
     page,
     pageSize,
-    role: ROLE.STUDENT,
-    includeClass: route.params.classId,
   },
 });
 
-const students = computed(() => (data.value ? data.value.users : []));
+const users = computed(() => (data.value ? data.value.users : []));
 const count = computed(() => (data.value ? data.value.count : 0));
 
-const studentId = ref("");
+const userId = ref("");
 
 const columnHeaders = [
   { name: "First Name", value: "firstName" },
   { name: "Last Name", value: "lastName" },
-] as { name: string; value: keyof User }[];
+  { name: "Email", value: "email" },
+  { name: "Role", value: "role" },
+  { name: "Telephone", value: "telephone" },
+  { name: "Verified At", value: "verifiedAt" },
+] as { name: string; value: keyof ({ role: ROLE } & User) }[];
 
-const deleteStudent = (studentId: string) =>
-  $fetch(
-    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/students/${studentId}`,
-    {
-      method: "DELETE",
-    }
-  );
+const deleteUser = (userId: string) =>
+  $fetch($api.users.id(userId)({ schoolId: route.params.id as string }), {
+    method: "DELETE",
+  });
 </script>
 
 <template>
@@ -45,10 +46,11 @@ const deleteStudent = (studentId: string) =>
     <Button
       color="success"
       class="self-start"
-      :to="`/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/students/new`"
+      :to="$routes.users.new({ schoolId: route.params.id as string })"
     >
-      Add student
+      Add user
     </Button>
+
     <Table full-width>
       <thead>
         <TableRow>
@@ -59,24 +61,36 @@ const deleteStudent = (studentId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <TableRow v-for="row in students" :key="row.id">
+        <TableRow v-for="row in users" :key="row.id">
           <TableCell
             v-for="cell in columnHeaders"
             :key="`cell-${cell}-${row.id}`"
           >
-            {{ row[cell.value] }}
+            {{
+              cell.value === "role"
+                ? row[cell.value].slice(0, 1).toUpperCase() +
+                  row[cell.value].slice(1).toLowerCase()
+                : row[cell.value]
+            }}
           </TableCell>
 
           <TableCell>
             <div class="flex space-x-4">
-              <IconButton color="info" :to="`students/${row.id}`">
-                <div class="i-heroicons-arrows-right-left w-6 h-6" />
+              <IconButton
+                color="info"
+                :to="
+                  $routes.users.get(row.id)({
+                    schoolId: route.params.id as string,
+                  })
+                "
+              >
+                <div class="i-heroicons-pencil-square w-6 h-6" />
               </IconButton>
               <IconButton
                 color="error"
                 @click="
                   () => {
-                    studentId = row.id;
+                    userId = row.id;
                     actions?.openModal();
                   }
                 "
@@ -89,45 +103,43 @@ const deleteStudent = (studentId: string) =>
       </TableBody>
     </Table>
     <Pagination
-      v-if="students.length"
+      v-if="users.length"
       :page-size="pageSize"
       :current-page="page"
       :total="count"
-      @page:set="setPage"
       @page-size:set="setPageSize"
-      @page:prev="prevPage"
+      @page:set="setPage"
       @page:next="nextPage"
+      @page:prev="prevPage"
     />
     <Modal>
       <ModalOverlay />
       <ModalContent>
         <ModalHead>
-          <h3 class="text-2xl font-semibold">Remove student from class</h3>
+          <h3 class="text-2xl font-semibold">Delete user</h3>
         </ModalHead>
         <ModalCloseButton />
         <ModalBody>
-          <p>Are you sure you want to remove the student from this class?</p>
+          <p>Are you sure you want to delete this user?</p>
         </ModalBody>
         <ModalFooter>
           <Button
             color="error"
             @click="
               async () => {
-                async () => {
-                  await deleteStudent(studentId);
-                  studentId = '';
-                  await refresh();
-                  actions?.closeModal();
-                };
+                await deleteUser(userId);
+                userId = '';
+                await refresh();
+                actions?.closeModal();
               }
             "
           >
-            Remove
+            Delete
           </Button>
           <Button
             @click="
               () => {
-                studentId = '';
+                userId = '';
                 actions?.closeModal();
               }
             "

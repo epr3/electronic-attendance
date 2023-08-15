@@ -4,6 +4,8 @@ import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
+const { $routes, $api } = useNuxtApp();
+
 const route = useRoute();
 
 const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
@@ -12,7 +14,7 @@ const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
 const { data, refresh } = await useFetch<{
   subjects: Subject[];
   count: number;
-}>(`/api/school/${route.params.id}/subjects`, {
+}>($api.subjects.index({ schoolId: route.params.id as string }), {
   query: {
     page,
     pageSize,
@@ -30,14 +32,18 @@ const columnHeaders = [{ name: "Name", value: "name" }] as {
 }[];
 
 const deleteSubject = (subjectId: string) =>
-  $fetch(`/api/school/${route.params.id}/subjects/${subjectId}`, {
+  $fetch($api.subjects.id(subjectId)({ schoolId: route.params.id as string }), {
     method: "DELETE",
   });
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
-    <Button color="success" class="self-start" to="subject/new">
+    <Button
+      color="success"
+      class="self-start"
+      :to="$routes.subjects.new({ schoolId: route.params.id as string })"
+    >
       Add subject
     </Button>
     <Table full-width>
@@ -60,7 +66,13 @@ const deleteSubject = (subjectId: string) =>
 
           <TableCell>
             <div class="flex space-x-4">
-              <IconButton :to="`subject/${row.id}`">
+              <IconButton
+                :to="
+                  $routes.subjects.get(row.id)({
+                    schoolId: route.params.id as string,
+                  })
+                "
+              >
                 <div class="i-heroicons-pencil-square w-6 h-6" />
               </IconButton>
               <IconButton

@@ -4,6 +4,7 @@ import { object, string } from "zod";
 
 const route = useRoute();
 const router = useRouter();
+const { $routes, $api } = useNuxtApp();
 
 const generalError = ref("");
 
@@ -11,11 +12,22 @@ const page = 1;
 const pageSize = 12;
 
 const { data } = await useFetch<{ classes: Class[] }>(
-  `/api/school/${route.params.id}/years/${route.params.yearId}/classes?page=${page}&pageSize=${pageSize}`
+  $api.years.classes.index({
+    schoolId: route.params.id as string,
+    yearId: route.params.yearId as string,
+  }),
+  {
+    query: {
+      page,
+      pageSize,
+    },
+  }
 );
 
 const { data: student } = await useFetch(
-  `/api/school/${route.params.id}/users/${route.params.studentId}`
+  $api.users.id(route.params.studentId as string)({
+    schoolId: route.params.id as string,
+  })
 );
 
 const classes = computed(() => data.value?.classes ?? []);
@@ -35,7 +47,11 @@ const onSubmit = handleSubmit(async (values) => {
   const { classId } = values;
 
   const { error } = await useFetch(
-    `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/students/${route.params.studentId}`,
+    $api.years.classes.students.id(route.params.studentId as string)({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+      classId,
+    }),
     {
       method: "PUT",
       body: { classId },
@@ -46,7 +62,13 @@ const onSubmit = handleSubmit(async (values) => {
     generalError.value = error.value?.message ?? "";
     return;
   }
-  await navigateTo(`/school/${route.params.id}/subject`);
+  await navigateTo(
+    $routes.years.classes.students.index({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+      classId: route.params.classId as string,
+    })
+  );
 });
 </script>
 
@@ -67,11 +89,11 @@ const onSubmit = handleSubmit(async (values) => {
     {{ JSON.stringify(student) }}
     <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
       <FormElement name="classId">
-        <Select label="Class" name="classId" placeholder="Select new class">
+        <FormSelect label="Class" name="classId" placeholder="Select new class">
           <option v-for="item in classes" :key="item.id" :value="item.id">
             {{ item.title }}
           </option>
-        </Select>
+        </FormSelect>
       </FormElement>
       <Button :disabled="isSubmitting" type="submit">Submit</Button>
     </form>

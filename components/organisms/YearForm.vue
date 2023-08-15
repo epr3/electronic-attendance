@@ -4,7 +4,7 @@ import { RRule, datetime, rrulestr } from "rrule";
 import { array, string, object } from "zod";
 
 const route = useRoute();
-const { $dayjs } = useNuxtApp();
+const { $dayjs, $api, $routes } = useNuxtApp();
 const steps = ["Select dates", "Select holidays", "Verify dates"];
 
 const year = ref<
@@ -19,7 +19,7 @@ if (route.params.yearId) {
     SchoolYear & {
       holidays: SchoolYearHolidays[];
     }
-  >(`/api/school/${route.params.id}/years/${route.params.yearId}`);
+  >($api.years.index({ schoolId: route.params.id as string }), {});
   year.value = data.value;
 }
 
@@ -138,8 +138,12 @@ async function onSubmit(values: Record<string, any>) {
   );
 
   const apiRoute = route.params.userId
-    ? `/api/school/${route.params.id}/years/${route.params.yearId}`
-    : `/api/school/${route.params.id}/years`;
+    ? $api.years.id(route.params.yearId as string)({
+        schoolId: route.params.id as string,
+      })
+    : $api.years.index({
+        schoolId: route.params.id as string,
+      });
 
   const method = route.params.userId ? "PUT" : "POST";
 
@@ -156,7 +160,9 @@ async function onSubmit(values: Record<string, any>) {
     return;
   }
 
-  await navigateTo(`/school/${route.params.id}/year`);
+  await navigateTo(
+    $routes.years.index({ schoolId: route.params.id as string })
+  );
 }
 </script>
 

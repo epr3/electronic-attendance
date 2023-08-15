@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { ROLE, type School, type SchoolUser, type User } from "@prisma/client";
 
+const { $api, $routes } = useNuxtApp();
+
 const props = defineProps<{
   user: User & {
     school: (SchoolUser & {
@@ -17,17 +19,17 @@ const schools = computed(() =>
 );
 
 const logout = async () => {
-  await useFetch("/api/auth/logout");
-  return await navigateTo("/login");
+  await useFetch($api.auth.logout);
+  return await navigateTo($routes.auth.login);
 };
 
 const navItems = [
   {
-    path: "/",
+    path: $routes.home,
     name: "Home",
   },
   {
-    path: "/profile",
+    path: $routes.profile,
     name: "Profile",
   },
 ];
@@ -71,10 +73,10 @@ const navItems = [
 
           <li v-for="item in schools" :key="item.schoolId">
             <NuxtLink
-              :to="`/school/${item.schoolId}/user`"
+              :to="$routes.users.index({ schoolId: item.schoolId })"
               class="menu-link"
               :class="{
-                'font-bold': route.path === `/school/${item.schoolId}`,
+                'font-bold': route.path === `/schools/${item.schoolId}`,
               }"
             >
               {{ item.school.name }}

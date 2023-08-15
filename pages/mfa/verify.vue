@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
 
-await useFetch("/api/auth/mfa/send-sms");
+const { $routes, $api } = useNuxtApp();
+
+await useFetch($api.auth.mfaSms);
 
 const { handleSubmit, isSubmitting, errors } = useForm({
   validationSchema: toTypedSchema(
@@ -13,12 +15,12 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 
 const onSubmit = handleSubmit(async (values) => {
   try {
-    await useFetch("/api/auth/mfa/verify", {
+    await useFetch($api.auth.mfaVerify, {
       method: "POST",
       body: { token: values.token },
     });
 
-    return await navigateTo("/");
+    return await navigateTo($routes.home);
   } catch (e) {
     console.log(e);
   }

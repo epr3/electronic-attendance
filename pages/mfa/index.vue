@@ -1,8 +1,10 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
 
+const { $routes, $api } = useNuxtApp();
+
 const { data } = await useFetch<{ qrCode: string; secret: string }>(
-  "/api/auth/mfa/generate-qr"
+  $api.auth.mfaGenerateQr
 );
 
 const qrCode = computed(() => data.value?.qrCode || "");
@@ -17,28 +19,28 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 async function smsEnroll() {
-  await useFetch("/api/auth/mfa/enroll", {
+  await useFetch($api.auth.mfaEnroll, {
     method: "POST",
     body: { secret: secret.value, smsOnly: true },
   });
 
-  return await navigateTo("/mfa/verify");
+  return await navigateTo($routes.auth.mfaVerify);
 }
 
 const onSubmit = handleSubmit(async (values) => {
   await useAsyncData("verify", () =>
-    $fetch("/api/auth/mfa/enroll", {
+    $fetch($api.auth.mfaEnroll, {
       method: "POST",
       body: { secret: secret.value, smsOnly: false },
     }).then(() =>
-      $fetch("/api/auth/mfa/verify", {
+      $fetch($api.auth.mfaVerify, {
         method: "POST",
         body: { token: values.token },
       })
     )
   );
 
-  return await navigateTo("/");
+  return await navigateTo($routes.home);
 });
 </script>
 

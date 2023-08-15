@@ -2,9 +2,13 @@
 import { Class, ClassStudent } from "@prisma/client";
 
 const route = useRoute();
+const { $api } = useNuxtApp();
 
 const { data } = await useFetch<Class & { students: ClassStudent[] }>(
-  `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}`
+  $api.years.classes.id(route.params.classId as string)({
+    schoolId: route.params.id as string,
+    yearId: route.params.yearId as string,
+  })
 );
 
 const classObject = computed(() => (data.value ? data.value : { title: "" }));

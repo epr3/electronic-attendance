@@ -3,12 +3,15 @@ import { ROLE, User } from "@prisma/client";
 import { object, string, nativeEnum } from "zod";
 
 const route = useRoute();
+const { $routes, $api } = useNuxtApp();
 
 const user = ref<(User & { role: ROLE }) | null>(null);
 
 if (route.params.userId) {
   const { data } = await useFetch<User & { role: ROLE }>(
-    `/api/auth/school/${route.params.id}/users/${route.params.userId}`
+    $routes.users.get(route.params.userId as string)({
+      schoolId: route.params.id as string,
+    })
   );
 
   user.value = data.value;
@@ -33,8 +36,10 @@ const onSubmit = handleSubmit(async (values) => {
   const { email, firstName, lastName, telephone, role } = values;
 
   const apiRoute = route.params.userId
-    ? `/api/school/${route.params.id}/users/${route.params.userId}`
-    : `/api/school/${route.params.id}/users`;
+    ? $api.users.id(route.params.userId as string)({
+        schoolId: route.params.id as string,
+      })
+    : $api.users.index({ schoolId: route.params.id as string });
 
   const method = route.params.userId ? "PUT" : "POST";
 
@@ -47,7 +52,9 @@ const onSubmit = handleSubmit(async (values) => {
     generalError.value = error.value?.message ?? "";
     return;
   }
-  await navigateTo(`/school/${route.params.id}/user`);
+  await navigateTo(
+    $routes.users.index({ schoolId: route.params.id as string })
+  );
 });
 </script>
 
@@ -58,7 +65,9 @@ const onSubmit = handleSubmit(async (values) => {
         class="i-heroicons-arrow-left w-8 h-8 cursor-pointer"
         @click="
           async () => {
-            await navigateTo(`/school/${route.params.id}/user`);
+            await navigateTo(
+              $routes.users.index({ schoolId: route.params.id as string })
+            );
           }
         "
       />

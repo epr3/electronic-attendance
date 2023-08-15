@@ -5,7 +5,7 @@ import { RRule, datetime, rrulestr } from "rrule";
 import { array, string, object } from "zod";
 
 const route = useRoute();
-const { $dayjs } = useNuxtApp();
+const { $dayjs, $routes, $api } = useNuxtApp();
 const steps = ["Select dates & teacher", "Select students", "Verify data"];
 
 const studentsPage = 1;
@@ -21,21 +21,30 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
       users: (User & {
         role: ROLE;
       })[];
-    }>(
-      `/api/school/${route.params.id}/users?page=${studentsPage}&pageSize=${studentsPageSize}&role=STUDENT&includeClass=${route.params.classId}`
-    ),
+    }>($routes.users.index({ schoolId: route.params.id as string }), {
+      query: {
+        role: ROLE.STUDENT,
+        page: studentsPage,
+        pageSize: studentsPageSize,
+        includeClass: route.params.classId as string,
+      },
+    }),
     $fetch<{
       users: (User & {
         role: ROLE;
       })[];
-    }>(
-      `/api/school/${route.params.id}/users?page=${teachersPage}&pageSize=${teachersPageSize}&role=TEACHER`
-    ),
+    }>($routes.users.index({ schoolId: route.params.id as string }), {
+      query: {
+        role: ROLE.TEACHER,
+        page: teachersPage,
+        pageSize: teachersPageSize,
+      },
+    }),
     $fetch<{
       subjects: Subject[];
-    }>(
-      `/api/school/${route.params.id}/subjects?page=${subjectsPage}&pageSize=${subjectsPageSize}`
-    ),
+    }>($api.subjects.index({ schoolId: route.params.id as string }), {
+      query: { page: subjectsPage, pageSize: subjectsPageSize },
+    }),
   ]);
 
   let schedule = null;
@@ -44,7 +53,11 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
     schedule = await $fetch<
       SubjectTeacherClass & { students: { studentId: string }[] }
     >(
-      `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules/${route.params.subjectId}`
+      $api.years.classes.schedules.id(route.params.subjectId as string)({
+        schoolId: route.params.id as string,
+        yearId: route.params.yearId as string,
+        classId: route.params.classId as string,
+      })
     );
   }
 
@@ -130,8 +143,16 @@ async function onSubmit(values: Record<string, any>) {
   });
 
   const apiRoute = route.params.subjectId
-    ? `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules/${route.params.subjectId}`
-    : `/api/school/${route.params.id}/years/${route.params.yearId}/classes/${route.params.classId}/schedules`;
+    ? $api.years.classes.schedules.id(route.params.subjectId as string)({
+        schoolId: route.params.id as string,
+        yearId: route.params.yearId as string,
+        classId: route.params.classId as string,
+      })
+    : $api.years.classes.schedules.index({
+        schoolId: route.params.id as string,
+        yearId: route.params.yearId as string,
+        classId: route.params.classId as string,
+      });
 
   const method = route.params.subjectId ? "PUT" : "POST";
 
@@ -146,7 +167,11 @@ async function onSubmit(values: Record<string, any>) {
   }
 
   return await navigateTo(
-    `/school/${route.params.id}/year/${route.params.yearId}/classes/${route.params.classId}/subjects`
+    $routes.years.classes.subjects.index({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+      classId: route.params.classId as string,
+    })
   );
 }
 </script>

@@ -1,52 +1,69 @@
 <script lang="ts" setup>
-import { SchoolYear } from "@prisma/client";
-import { rrulestr } from "rrule";
+import { Class, User } from "@prisma/client";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const actions = inject(ModalActionSymbol);
 
-const { $dayjs } = useNuxtApp();
-const route = useRoute();
+const { $routes, $api } = useNuxtApp();
 
+const route = useRoute();
 const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
-  years: SchoolYear[];
+  classes: (Class & {
+    _count: {
+      students: number;
+    };
+    headTeacher: User;
+  })[];
   count: number;
-}>(`/api/school/${route.params.id}/years`, {
-  query: {
-    page,
-    pageSize,
-  },
-});
+}>(
+  $api.years.classes.index({
+    schoolId: route.params.id as string,
+    yearId: route.params.yearId as string,
+  }),
+  {
+    query: {
+      page,
+      pageSize,
+    },
+  }
+);
 
-const years = computed(() =>
+const classes = computed(() =>
   data.value
-    ? data.value.years.map((item) => {
-        const rRule = rrulestr(item.schoolDateRule);
+    ? data.value.classes.map((item) => {
         return {
           id: item.id,
-          startDate: $dayjs(rRule.options.dtstart).format("YYYY-MM-DD"),
-          endDate: $dayjs(rRule.options.until).format("YYYY-MM-DD"),
+          title: item.title,
+          headTeacher: `${item.headTeacher.firstName} ${item.headTeacher.lastName}`,
+          noOfStudents: item._count.students,
         };
       })
     : []
 );
+
 const count = computed(() => (data.value ? data.value.count : 0));
 
-const yearId = ref("");
+const classId = ref("");
 
 const columnHeaders = [
-  { name: "Start Date", value: "startDate" },
-  { name: "End Date", value: "endDate" },
-  // { name: "Holidays", value: "email" },
+  { name: "Class Title", value: "title" },
+  { name: "Head Teacher", value: "headTeacher" },
+  { name: "No of students", value: "noOfStudents" },
 ];
 
-const deleteYear = (yearId: string) =>
-  $fetch(`/api/school/${route.params.id}/years/${yearId}`, {
-    method: "DELETE",
-  });
+const deleteClass = (classId: string) =>
+  $fetch(
+    $api.years.classes.id(classId)({
+      schoolId: route.params.id as string,
+      yearId: route.params.yearId as string,
+    }),
+    {
+      method: "DELETE",
+    }
+  );
 </script>
 
 <template>
@@ -54,9 +71,14 @@ const deleteYear = (yearId: string) =>
     <Button
       color="success"
       class="self-start"
-      :to="`/school/${route.params.id}/year/new`"
+      :to="
+        $routes.years.classes.new({
+          schoolId: route.params.id as string,
+          yearId: route.params.yearId as string,
+        })
+      "
     >
-      Add year
+      Add class
     </Button>
     <Table full-width>
       <thead>
@@ -68,10 +90,10 @@ const deleteYear = (yearId: string) =>
         </TableRow>
       </thead>
       <TableBody>
-        <TableRow v-for="row in years" :key="row.id">
+        <TableRow v-for="row in classes" :key="row.id">
           <TableCell
             v-for="cell in columnHeaders"
-            :key="`cell-${cell}-${row.id}`"
+            :key="`cell-${cell.value}-${row.id}`"
           >
             {{ row[cell.value as keyof typeof row] }}
           </TableCell>
@@ -80,13 +102,38 @@ const deleteYear = (yearId: string) =>
             <div class="flex space-x-4">
               <IconButton
                 color="success"
-                :to="`/school/${route.params.id}/year/${row.id}/classes`"
+                size="lg"
+                :to="
+                  $routes.years.classes.students.index({
+                    schoolId: route.params.id as string,
+                    yearId: route.params.yearId as string,
+                    classId: row.id,
+                  })
+                "
               >
-                <div class="i-heroicons-eye w-6 h-6" />
+                <div class="i-heroicons-users w-6 h-6" />
               </IconButton>
               <IconButton
+                color="success"
+                :to="
+                  $routes.years.classes.subjects.index({
+                    classId: row.id,
+                    schoolId: route.params.id as string,
+                    yearId: route.params.yearId as string,
+                  })
+                "
+              >
+                <div class="i-heroicons-academic-cap w-6 h-6" />
+              </IconButton>
+
+              <IconButton
                 color="info"
-                :to="`/school/${route.params.id}/year/${row.id}`"
+                :to="
+                  $routes.years.classes.get(row.id)({
+                    schoolId: route.params.id as string,
+                    yearId: route.params.yearId as string,
+                  })
+                "
               >
                 <div class="i-heroicons-pencil-square w-6 h-6" />
               </IconButton>
@@ -94,7 +141,7 @@ const deleteYear = (yearId: string) =>
                 color="error"
                 @click="
                   () => {
-                    yearId = row.id;
+                    classId = row.id;
                     actions?.openModal();
                   }
                 "
@@ -107,7 +154,7 @@ const deleteYear = (yearId: string) =>
       </TableBody>
     </Table>
     <Pagination
-      v-if="years.length"
+      v-if="classes.length"
       :page-size="pageSize"
       :current-page="page"
       :total="count"
@@ -131,8 +178,8 @@ const deleteYear = (yearId: string) =>
             color="error"
             @click="
               async () => {
-                await deleteYear(yearId);
-                yearId = '';
+                await deleteClass(classId);
+                classId = '';
                 await refresh();
                 actions?.closeModal();
               }
@@ -143,7 +190,7 @@ const deleteYear = (yearId: string) =>
           <Button
             @click="
               () => {
-                yearId = '';
+                classId = '';
                 actions?.closeModal();
               }
             "
