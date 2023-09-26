@@ -5,12 +5,18 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "prettier --check . && eslint .",
+    "format": "prettier --write .",
+    "prepare": "husky install",
+    "commit": "cz"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
   "devDependencies": {
+    "@commitlint/cli": "^17.7.1",
+    "@commitlint/config-conventional": "^17.7.0",
     "@faker-js/faker": "^8.0.2",
     "@iconify-json/heroicons": "^1.1.11",
     "@iconify/utils": "^2.1.7",
@@ -28,9 +34,11 @@
     "@unocss/transformer-variant-group": "^0.53.6",
     "@vueuse/core": "^10.2.1",
     "@vueuse/nuxt": "^10.2.1",
+    "commitizen": "^4.3.0",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.7.0",
     "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^8.0.3",
     "nuxt": "^3.6.5",
     "prisma": "5.0.0",
     "ts-node": "^10.9.1",
