@@ -8,6 +8,9 @@ dependencies:
   '@prisma/client':
     specifier: 5.1.1
     version: 5.1.1(prisma@5.0.0)
+  '@tanstack/vue-table':
+    specifier: ^8.10.3
+    version: 8.10.3(vue@3.3.4)
   '@vee-validate/nuxt':
     specifier: ^4.10.8
     version: 4.10.8(vue@3.3.4)
@@ -1715,6 +1718,21 @@ packages:
   /@sinclair/typebox@0.27.8:
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
     dev: true
+
+  /@tanstack/table-core@8.10.3:
+    resolution: {integrity: sha512-hJ55YfJlWbfzRROfcyA/kC1aZr/shsLA8XNAwN8jXylhYWGLnPmiJJISrUfj4dMMWRiFi0xBlnlC7MLH+zSrcw==}
+    engines: {node: '>=12'}
+    dev: false
+
+  /@tanstack/vue-table@8.10.3(vue@3.3.4):
+    resolution: {integrity: sha512-fuGP2M1CrjJJDKyd/NyExalCQ0toNuUZHpC8G7gnTs3lMvW3wRTMMrQZcgNkyN4XxNFSN+oMf4sMh1EtjUypVw==}
+    engines: {node: '>=12'}
+    peerDependencies:
+      vue: ^3.2.33
+    dependencies:
+      '@tanstack/table-core': 8.10.3
+      vue: 3.3.4
+    dev: false
 
   /@trysound/sax@0.2.0:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
