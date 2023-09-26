@@ -15,16 +15,24 @@ withDefaults(
   <NuxtLink
     v-if="to"
     :to="to"
-    class="btn cursor-pointer"
-    :class="{
-      'btn-success': color === 'success',
-      'btn-error': color === 'error',
-      'btn-info': color === 'info',
-      'btn-sm': size === 'sm',
-      'btn-md': size === 'md',
-      'btn-lg': size === 'lg',
-      'btn-xl': size === 'xl',
-    }"
+    :class="
+      cn(
+        'btn cursor-pointer',
+        {
+          'btn-sm': size === 'sm',
+          'btn-md': size === 'md',
+          'btn-lg': size === 'lg',
+          'btn-xl': size === 'xl',
+        },
+        { 'btn-disabled': disabled },
+        {
+          'btn-success': color === 'success',
+          'btn-error': color === 'error',
+          'btn-info': color === 'info',
+        },
+        $attrs.class ?? ''
+      )
+    "
   >
     <slot />
   </NuxtLink>
@@ -32,17 +40,24 @@ withDefaults(
     v-else
     :type="type"
     :disabled="disabled"
-    class="btn"
-    :class="{
-      'btn-success': !disabled && color === 'success',
-      'btn-error': !disabled && color === 'error',
-      'btn-info': !disabled && color === 'info',
-      'btn-disabled': !!disabled,
-      'btn-sm': size === 'sm',
-      'btn-md': size === 'md',
-      'btn-lg': size === 'lg',
-      'btn-xl': size === 'xl',
-    }"
+    :class="
+      cn(
+        'btn',
+        {
+          'btn-sm': size === 'sm',
+          'btn-md': size === 'md',
+          'btn-lg': size === 'lg',
+          'btn-xl': size === 'xl',
+        },
+        { 'btn-disabled': disabled },
+        {
+          'btn-success': color === 'success',
+          'btn-error': color === 'error',
+          'btn-info': color === 'info',
+        },
+        $attrs.class ?? ''
+      )
+    "
   >
     <slot />
   </button>
