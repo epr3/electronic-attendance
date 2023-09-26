@@ -22,7 +22,7 @@ const onSubmit = handleSubmit(async (values) => {
 
     return await navigateTo($routes.home);
   } catch (e) {
-    console.log(e);
+    // console.log(e);
   }
 });
 </script>

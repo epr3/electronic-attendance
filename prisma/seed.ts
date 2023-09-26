@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { faker } from "@faker-js/faker";
+// import { PrismaClient } from "@prisma/client";
+// import { faker } from "@faker-js/faker";
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 // async function main() {
 //   const alice = await prisma.user.upsert({
 //     where: { email: "alice@prisma.io" },

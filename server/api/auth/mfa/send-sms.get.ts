@@ -15,7 +15,6 @@ export default defineEventHandler(async (event) => {
       const from = "CatalogID";
       const to = user.telephone.split("+")[1];
       const text = `Your verification code is ${token}`;
-      console.log(from, to, text);
       return { from, to, text };
       // await ctx.vonage.send({ from, to, text });
     }
