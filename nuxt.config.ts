@@ -6,10 +6,6 @@ export default defineNuxtConfig({
     strict: true,
   },
 
-  build: {
-    transpile: ["trpc-nuxt"],
-  },
-
   components: {
     dirs: [
       {
