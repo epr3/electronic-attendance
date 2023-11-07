@@ -1,31 +1,30 @@
-import { ROLE } from "@prisma/client";
-import { prisma } from "~/prisma/db";
+import { sql, eq } from "drizzle-orm";
+
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const query = getQuery(event);
 
   const page = parseInt(query.page as string) ?? 1;
   const pageSize = parseInt(query.page as string) ?? 12;
   const id = event.context.params!.id;
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const [subjects, count] = await Promise.all([
-      prisma.subject.findMany({
-        where: {
-          schoolId: id,
-        },
-        take: pageSize,
-        skip: (page - 1) * pageSize,
+    const [subjects, result] = await Promise.all([
+      $db.query.subjects.findMany({
+        where: (subjects, { eq }) => eq(subjects.schoolId, id),
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
       }),
-      prisma.subject.count({
-        where: {
-          schoolId: id,
-        },
-      }),
+      $db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from($schema.userMfas)
+        .where(eq($schema.subjects.schoolId, id)),
     ]);
-    return { subjects, count };
+    return { subjects, count: result[0].count };
   } catch (e) {
     return createError({
       statusCode: 500,

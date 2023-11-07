@@ -1,8 +1,8 @@
-import { ROLE } from "@prisma/client";
 import { array, object, string } from "zod";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const yearId = event.context.params!.yearId;
 
@@ -15,31 +15,32 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     event.node.res.statusCode = 201;
-    return await prisma.$transaction(async (tx) => {
-      const group = await tx.class.create({
-        data: {
+    const classObj = await $db.transaction(async (tx) => {
+      const group = await tx
+        .insert($schema.classes)
+        .values({
           title: input.title,
           headTeacherId: input.headTeacherId,
           isActive: true,
           schoolId: id,
           schoolYearId: yearId,
-        },
-      });
+        })
+        .returning();
 
-      await tx.classStudent.createMany({
-        data: input.students.map((item: string) => ({
+      await tx.insert($schema.classesStudents).values(
+        input.students.map((item: string) => ({
           studentId: item,
-          classId: group.id,
-        })),
-      });
+          classId: group[0].id,
+        }))
+      );
 
-      const classWithStudents = await tx.class.findFirstOrThrow({
-        where: { id: group.id },
-        include: {
+      const classWithStudents = await tx.query.classes.findFirst({
+        where: (classObj, { eq }) => eq(classObj.id, group[0].id),
+        with: {
           headTeacher: true,
           students: {
             include: {
@@ -51,6 +52,8 @@ export default defineEventHandler(async (event) => {
 
       return classWithStudents;
     });
+
+    return classObj;
   } catch (e) {
     return createError({
       statusCode: 500,

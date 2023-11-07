@@ -1,9 +1,10 @@
-import { ROLE, TOKEN_TYPE } from "@prisma/client";
+import { generateRandomString, alphabet } from "oslo/random";
 import { nativeEnum, object, string } from "zod";
-import dayjs from "dayjs";
-import { prisma } from "~/prisma/db";
+
+import { ROLE, TOKEN_TYPE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema, $dayjs, $verificationTokenController } = useNuxtApp();
   const id = event.context.params!.id;
 
   const input = await useValidatedBody(
@@ -17,37 +18,44 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const user = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.upsert({
-        where: { email: input.email },
-        create: {
+    const user = await $db.transaction(async (tx) => {
+      const user = await tx
+        .insert($schema.users)
+        .values({
           firstName: input.firstName,
           lastName: input.lastName,
           email: input.email,
           telephone: input.telephone,
-        },
-        update: {},
-      });
-      if (dayjs(user.createdAt).isSame(user.updatedAt)) {
-        await tx.token.create({
-          data: {
-            email: input.email,
-            tokenType: TOKEN_TYPE.RESET_PASSWORD,
-          },
+          createdAt: BigInt($dayjs().utc().unix()),
+          updatedAt: BigInt($dayjs().utc().unix()),
+        })
+        .returning()
+        .onConflictDoNothing();
+      if ($dayjs(Number(user[0].createdAt)).isSame(Number(user[0].updatedAt))) {
+        const token = $verificationTokenController.createToken(
+          generateRandomString(63, alphabet("a-z", "0-9")),
+          user[0].email
+        );
+        await tx.insert($schema.tokens).values({
+          email: input.email,
+          tokenType: TOKEN_TYPE.RESET_PASSWORD,
+          createdAt: BigInt($dayjs().utc().unix()),
+          token: token.value,
         });
       }
 
-      const schoolUser = await tx.schoolUser.create({
-        data: {
+      const schoolUser = await tx
+        .insert($schema.schoolUsers)
+        .values({
           schoolId: id,
-          userId: user.id,
+          userId: user[0].id,
           role: input.role,
-        },
-      });
-      return { ...user, role: schoolUser.role };
+        })
+        .returning();
+      return { ...user[0], role: schoolUser[0].role };
     });
     event.node.res.statusCode = 201;
     return user;

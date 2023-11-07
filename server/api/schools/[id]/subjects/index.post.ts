@@ -1,8 +1,8 @@
-import { ROLE } from "@prisma/client";
 import { object, string } from "zod";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
 
   const input = await useValidatedBody(
@@ -12,16 +12,18 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     event.node.res.statusCode = 201;
-    return await prisma.subject.create({
-      data: {
+    const subject = await $db
+      .insert($schema.subjects)
+      .values({
         name: input.name,
         schoolId: id,
-      },
-    });
+      })
+      .returning();
+    return subject;
   } catch (e) {
     return createError({
       statusCode: 500,

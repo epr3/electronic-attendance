@@ -10,33 +10,15 @@ services:
       - online-admittance-api_redis-data:/data
   database:
     container_name: online-admittance-api-db
-    image: mariadb
+    image: postgres:16
     environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: online-admittance-api
-      MYSQL_USER: online-admittance-api
-      MYSQL_PASSWORD: secret
-    command:
-      [
-        "mysqld",
-        "--character-set-server=utf8mb4",
-        "--collation-server=utf8mb4_unicode_ci",
-      ]
+      POSTGRES_DB: online-admittance
+      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: online-admittance-api
     volumes:
-      - online-admittance-api_mysql:/var/lib/mysql
+      - online-admittance-api_postgres:/var/lib/postgresql/data
     ports:
-      - 33006:3306
-
-  phpmyadmin:
-    container_name: online-admittance-api-phpmyadmin
-    depends_on:
-      - database
-    image: phpmyadmin/phpmyadmin
-    ports:
-      - 81:80
-    environment:
-      PMA_HOST: database
-      PMA_PORT: 3306
+      - 5432:5432
 
   minio:
     container_name: online-admittance-api-minio
@@ -79,7 +61,7 @@ services:
       exit 0;"
 
 volumes:
-  online-admittance-api_mysql:
+  online-admittance-api_postgres:
   online-admittance-api_minio-data:
   online-admittance-api_redis-data:
 

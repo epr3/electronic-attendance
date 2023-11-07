@@ -1,10 +1,9 @@
-import { PASSPORT_TYPE, ROLE } from "@prisma/client";
-
 import { object, string } from "zod";
-import * as bcrypt from "bcrypt";
-import { prisma } from "~/prisma/db";
+
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db } = useNuxtApp();
   const input = await useValidatedBody(
     event,
     object({
@@ -14,52 +13,40 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const user = await prisma.user.findFirst({
-      where: { email: input.email, verifiedAt: { not: null } },
-      include: {
+    const key = await auth.useKey("email", input.email, input.password);
+    const session = await auth.createSession({
+      userId: key.userId,
+      attributes: {
+        mfaVerified: false,
+      },
+    });
+    const authRequest = auth.handleRequest(event);
+    authRequest.setSession(session);
+    const user = await $db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.id, key.userId),
+      with: {
         mfa: true,
-        school: { include: { school: true } },
-        userPassports: {
-          where: { passportType: PASSPORT_TYPE.PASSWORD },
-          select: { password: true },
-        },
+        schools: true,
       },
     });
 
-    if (!user) {
-      return createError({
-        statusCode: 401,
-        statusMessage: "UNAUTHORIZED",
-        message: "The provided credentials are invalid.",
-      });
+    if (user) {
+      return {
+        hasMfa: !!user.mfa,
+        mfaRequired: user.schools.some(
+          (item) =>
+            item.role === ROLE.ADMIN ||
+            item.role === ROLE.DIRECTOR ||
+            item.role === ROLE.TEACHER
+        ),
+      };
     }
 
-    const ok = bcrypt.compareSync(
-      input.password,
-      user.userPassports[0].password as string
-    );
-
-    if (!ok) {
-      return createError({
-        statusCode: 401,
-        statusMessage: "UNAUTHORIZED",
-        message: "The provided credentials are invalid.",
-      });
-    }
-    const session = await useServerSession(event);
-
-    session.user = user;
-    await session.save();
-
-    return {
-      hasMfa: !!user.mfa,
-      mfaRequired: user.school.some(
-        (item) =>
-          item.role === ROLE.ADMIN ||
-          item.role === ROLE.DIRECTOR ||
-          item.role === ROLE.TEACHER
-      ),
-    };
+    return createError({
+      statusCode: 401,
+      statusMessage: "UNAUTHORIZED",
+      message: "Invalid email or password",
+    });
   } catch (e) {
     return createError({
       statusCode: 500,

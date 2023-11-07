@@ -1,8 +1,9 @@
-import { ROLE } from "@prisma/client";
+import { eq } from "drizzle-orm";
 import { object, string, array } from "zod";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const yearId = event.context.params!.yearId;
   const classId = event.context.params!.classId;
@@ -17,35 +18,36 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    return await prisma.$transaction(async (tx) => {
-      const group = await tx.class.update({
-        where: {
-          id: classId,
-        },
-        data: {
+    const classes = await $db.transaction(async (tx) => {
+      const group = await tx
+        .update($schema.classes)
+        .set({
           title: input.title,
           headTeacherId: input.headTeacherId,
           isActive: true,
           schoolId: id,
           schoolYearId: yearId,
-        },
-      });
+        })
+        .where(eq($schema.classes.id, classId))
+        .returning();
 
-      await tx.classStudent.deleteMany({ where: { classId: group.id } });
+      await tx
+        .delete($schema.classesStudents)
+        .where(eq($schema.classesStudents.classId, group[0].id));
 
-      await tx.classStudent.createMany({
-        data: input.students.map((item: string) => ({
+      await tx.insert($schema.classesStudents).values(
+        input.students.map((item: string) => ({
           studentId: item,
-          classId: group.id,
-        })),
-      });
+          classId: group[0].id,
+        }))
+      );
 
-      const classWithStudents = await tx.class.findFirstOrThrow({
-        where: { id: group.id },
-        include: {
+      const classWithStudents = await tx.query.classes.findFirst({
+        where: (classes, { eq }) => eq(classes.id, group[0].id),
+        with: {
           headTeacher: true,
           students: {
             include: {
@@ -57,6 +59,7 @@ export default defineEventHandler(async (event) => {
 
       return classWithStudents;
     });
+    return classes;
   } catch (e) {
     return createError({
       statusCode: 500,

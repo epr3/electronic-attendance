@@ -1,8 +1,9 @@
-import { ROLE } from "@prisma/client";
+import { eq } from "drizzle-orm";
 import { object, string } from "zod";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const subjectId = event.context.params!.subjectId;
 
@@ -13,13 +14,16 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    await prisma.subject.update({
-      data: { name: input.name },
-      where: { id: subjectId },
-    });
+    await $db
+      .update($schema.subjects)
+      .set({
+        name: input.name,
+      })
+      .where(eq($schema.subjects.id, subjectId));
+    return sendNoContent(event, 204);
   } catch (e) {
     return createError({
       statusCode: 500,

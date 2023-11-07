@@ -1,16 +1,18 @@
-import { ROLE } from "@prisma/client";
-import { type H3Event } from "h3";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export async function useUserRoleSchool(
-  event: H3Event,
   schoolId: string,
   roles: ROLE[] = [ROLE.ADMIN, ROLE.DIRECTOR, ROLE.TEACHER]
 ) {
-  const user = await useServerAuth(event);
+  const { $db } = useNuxtApp();
+  const user = useServerUser();
 
-  const schoolUser = await prisma.schoolUser.findFirst({
-    where: { userId: user.id, schoolId },
+  const schoolUser = await $db.query.schoolUsers.findFirst({
+    where: (schoolUser, { eq, and }) =>
+      and(
+        eq(schoolUser.schoolId, schoolId),
+        eq(schoolUser.userId, user.value!.id)
+      ),
   });
 
   if (!schoolUser || !roles.includes(schoolUser.role)) {

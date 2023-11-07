@@ -1,9 +1,8 @@
 import { object, string } from "zod";
-import { authenticator } from "otplib";
-import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
-  const user = await useServerAuth(event);
+  const { $db, $totpController } = useNuxtApp();
+  const user = useServerUser();
   const input = await useValidatedBody(
     event,
     object({
@@ -11,27 +10,47 @@ export default defineEventHandler(async (event) => {
     })
   );
   try {
-    const userObject = await prisma.user.findFirstOrThrow({
-      where: { email: user.email },
-      include: { mfa: true, school: { include: { school: true } } },
+    const mfa = await $db.query.userMfas.findFirst({
+      where: (mfa, { eq }) => eq(mfa.userId, user.value!.id),
     });
 
-    const isValid = authenticator.verify({
-      token: input.token,
-      secret: userObject.mfa!.mfaSecret,
-    });
-
-    if (!isValid) {
+    if (!mfa) {
       return createError({
         statusCode: 401,
         statusMessage: "UNAUTHORIZED",
         message: "The provided code is invalid.",
       });
     }
-    const session = await useServerSession(event);
 
-    session.mfaVerified = true;
-    await session.save();
+    const validOTP = await $totpController.verify(
+      input.token,
+      new TextEncoder().encode(mfa.secret)
+    );
+
+    if (!validOTP) {
+      return createError({
+        statusCode: 401,
+        statusMessage: "UNAUTHORIZED",
+        message: "The provided code is invalid.",
+      });
+    }
+
+    const authRequest = auth.handleRequest(event);
+    // check if user is authenticated
+    const session = await authRequest.validate();
+    if (!session) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "UNAUTHORIZED",
+        message: "The provided code is invalid.",
+      });
+    }
+
+    const newSession = await auth.updateSessionAttributes(session.id, {
+      mfaVerified: true,
+    });
+
+    authRequest.setSession(newSession);
 
     return sendNoContent(event, 204);
   } catch (e) {

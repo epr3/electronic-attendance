@@ -1,17 +1,18 @@
-import { ROLE } from "@prisma/client";
-import { prisma } from "~/prisma/db";
+import { eq } from "drizzle-orm";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const yearId = event.context.params!.yearId;
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     // TODO: think if we want to delete years with data
-    await prisma.schoolYear.delete({
-      where: { id: yearId },
-    });
+    await $db
+      .delete($schema.schoolYears)
+      .where(eq($schema.schoolYears.id, yearId));
     return sendNoContent(event, 204);
   } catch (e) {
     return createError({

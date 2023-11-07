@@ -1,8 +1,8 @@
-import { ROLE } from "@prisma/client";
 import { object, string, array } from "zod";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
 
   const input = await useValidatedBody(
@@ -15,27 +15,24 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     event.node.res.statusCode = 201;
-    return await prisma.$transaction(async (tx) => {
-      const schoolYearObj = await tx.schoolYear.create({
-        data: {
-          schoolId: id,
-          schoolDateRule: input.schoolDateRule,
-          holidays: {
-            create: input.holidayDateRules.map(
-              (item: { name: string; rule: string }) => ({
-                name: item.name,
-                holidayDateRule: item.rule,
-              })
-            ),
-          },
-        },
+    const schoolYearObj = await $db.transaction(async (tx) => {
+      const schoolYearObj = await tx.insert($schema.schoolYears).values({
+        schoolId: id,
+        schoolDateRule: input.schoolDateRule,
       });
+      await tx.insert($schema.schoolYearHolidays).values(
+        input.holidayDateRules.map((item: { name: string; rule: string }) => ({
+          name: item.name,
+          holidayDateRule: item.rule,
+        }))
+      );
       return schoolYearObj;
     });
+    return schoolYearObj;
   } catch (e) {
     return createError({
       statusCode: 500,

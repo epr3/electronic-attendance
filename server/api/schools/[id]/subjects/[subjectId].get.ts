@@ -1,15 +1,16 @@
-import { ROLE } from "@prisma/client";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db } = useNuxtApp();
   const id = event.context.params!.id;
   const subjectId = event.context.params!.subjectId;
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const subject = await prisma.subject.findFirstOrThrow({
-      where: { schoolId: id, id: subjectId },
+    const subject = await $db.query.subjects.findFirst({
+      where: (subjects, { eq, and }) =>
+        and(eq(subjects.id, subjectId), eq(subjects.schoolId, id)),
     });
 
     return subject;

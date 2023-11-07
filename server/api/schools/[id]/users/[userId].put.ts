@@ -1,8 +1,9 @@
-import { ROLE } from "@prisma/client";
+import { and, eq } from "drizzle-orm";
 import { nativeEnum, object, string } from "zod";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const userId = event.context.params!.userId;
 
@@ -17,33 +18,29 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: {
-          id: userId,
-        },
-        data: {
+    await $db.transaction(async (tx) => {
+      await tx
+        .update($schema.users)
+        .set({
           firstName: input.firstName,
           lastName: input.lastName,
           email: input.email,
           telephone: input.telephone,
-        },
-      });
+        })
+        .where(eq($schema.users.id, userId));
 
-      await tx.schoolUser.update({
-        where: {
-          schoolId_userId: {
-            userId,
-            schoolId: input.schoolId,
-          },
-        },
-        data: {
-          role: input.role,
-        },
-      });
+      await tx
+        .update($schema.schoolUsers)
+        .set({ role: input.role })
+        .where(
+          and(
+            eq($schema.schoolUsers.userId, userId),
+            eq($schema.schoolUsers.schoolId, id)
+          )
+        );
     });
   } catch (e) {
     return createError({

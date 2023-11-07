@@ -1,7 +1,8 @@
-import { ROLE } from "@prisma/client";
-import { prisma } from "~/prisma/db";
+import { sql, eq, and } from "drizzle-orm";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const query = getQuery(event);
 
   const page = parseInt(query.page as string) ?? 1;
@@ -9,34 +10,30 @@ export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
   const yearId = event.context.params!.yearId;
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const [classes, count] = await Promise.all([
-      prisma.class.findMany({
-        where: {
-          schoolId: id,
-          schoolYearId: yearId,
-        },
-        include: {
+    const [classes, result] = await Promise.all([
+      $db.query.classes.findMany({
+        where: (classObj, { and, eq }) =>
+          and(eq(classObj.schoolId, id), eq(classObj.schoolYearId, yearId)),
+        with: {
           headTeacher: true,
-          _count: {
-            select: {
-              students: true,
-            },
-          },
         },
-        take: pageSize,
-        skip: (page - 1) * pageSize,
+        offset: (page - 1) * pageSize,
+        limit: pageSize,
       }),
-      prisma.class.count({
-        where: {
-          schoolId: id,
-          schoolYearId: yearId,
-        },
-      }),
+      $db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from($schema.schoolYears)
+        .where(
+          and(
+            eq($schema.schoolYears.schoolId, id),
+            eq($schema.schoolYears.id, yearId)
+          )
+        ),
     ]);
-    return { classes, count };
+    return { classes, count: result[0].count };
   } catch (e) {
     return createError({
       statusCode: 500,

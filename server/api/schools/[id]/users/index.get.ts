@@ -1,7 +1,8 @@
-import { ROLE } from "@prisma/client";
-import { prisma } from "~/prisma/db";
+import { eq, and, or, ne, isNull } from "drizzle-orm";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const query = getQuery(event);
 
   const page = parseInt(query.page as string) ?? 1;
@@ -11,111 +12,74 @@ export default defineEventHandler(async (event) => {
   const includeClass = query.includeClass;
   const id = event.context.params!.id;
 
-  let filterObject = {};
-
+  let conditions;
   if (role) {
-    filterObject = { role };
     if (excludeYear) {
-      filterObject = {
-        ...filterObject,
-        user:
-          role === ROLE.STUDENT
-            ? {
-                classes: {
-                  none: {
-                    class: {
-                      schoolYearId: excludeYear as string,
-                    },
-                  },
-                },
-              }
-            : {
-                OR: [
-                  { headTeacherClass: null },
-                  {
-                    headTeacherClass: {
-                      schoolYearId: {
-                        not: excludeYear,
-                      },
-                    },
-                  },
-                ],
-              },
-      };
-    }
+      if (role === ROLE.STUDENT) {
+        conditions = eq($schema.classes.schoolYearId, excludeYear as string);
+      } else if (role === ROLE.TEACHER) {
+        conditions = or(
+          isNull($schema.classes.headTeacherId),
+          ne($schema.classes.schoolYearId, excludeYear as string)
+        );
+      }
 
-    if (includeClass) {
-      filterObject = {
-        ...filterObject,
-        user:
-          role === ROLE.STUDENT
-            ? {
-                OR: [
-                  {
-                    classes: {
-                      some: {
-                        classId: includeClass as string,
-                      },
-                    },
-                  },
-                  {
-                    classes: {
-                      none: {
-                        class: {
-                          schoolYearId: excludeYear as string,
-                        },
-                      },
-                    },
-                  },
-                ],
-              }
-            : {
-                OR: [
-                  { headTeacherClass: { id: includeClass as string } },
-                  {
-                    headTeacherClass: {
-                      isNot: {
-                        schoolYearId: excludeYear as string,
-                      },
-                    },
-                  },
-                ],
-              },
-      };
+      if (includeClass) {
+        if (role === ROLE.STUDENT) {
+          conditions = or(
+            eq($schema.classStudent.classId, includeClass as string),
+            eq($schema.classes.schoolYearId, excludeYear as string)
+          );
+        } else if (role === ROLE.TEACHER) {
+          conditions = or(
+            eq($schema.classes.id, includeClass as string),
+            eq($schema.classes.schoolYearId, excludeYear as string)
+          );
+        }
+      }
     }
   }
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const [users, count] = await Promise.all([
-      prisma.schoolUser.findMany({
-        where: {
-          schoolId: id,
-          ...filterObject,
-        },
-        include: { user: true },
-        take: pageSize,
-        skip: (page - 1) * pageSize,
-      }),
-      prisma.schoolUser.count({
-        where: {
-          schoolId: id,
-          ...filterObject,
-        },
-      }),
-    ]);
+    const response = await $db
+      .select()
+      .from($schema.users)
+      .leftJoin(
+        $schema.schoolUsers,
+        eq($schema.users.id, $schema.schoolUsers.userId)
+      )
+      .leftJoin(
+        $schema.schools,
+        eq($schema.schoolUsers.schoolId, $schema.schools.id)
+      )
+      .leftJoin(
+        $schema.schoolYears,
+        eq($schema.schoolYears.schoolId, $schema.schools.id)
+      )
+      .leftJoin(
+        $schema.classes,
+        eq($schema.classes.schoolYearId, $schema.schoolYears.id)
+      )
+      .leftJoin(
+        $schema.classStudent,
+        eq($schema.classStudent.classId, $schema.classes.id)
+      )
+      .where(
+        and(
+          eq($schema.schools.id, id),
+          eq($schema.schoolUsers.role, role as ROLE),
+          conditions
+        )
+      )
+      .limit(pageSize)
+      .offset(page - 1);
+    console.log(response);
 
     return {
-      users: users.map((item) => ({
-        id: item.userId,
-        firstName: item.user.firstName,
-        lastName: item.user.lastName,
-        email: item.user.email,
-        telephone: item.user.telephone,
-        role: item.role,
-      })),
-      count,
+      users: [],
+      count: 0,
     };
   } catch (e) {
     return createError({

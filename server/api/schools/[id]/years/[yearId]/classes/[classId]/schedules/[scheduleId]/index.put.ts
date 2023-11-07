@@ -1,8 +1,9 @@
-import { ROLE } from "@prisma/client";
 import { object, string, array } from "zod";
-import { prisma } from "~/prisma/db";
+import { eq } from "drizzle-orm";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const classId = event.context.params!.classId;
   const scheduleId = event.context.params!.scheduleId;
@@ -19,39 +20,39 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    return await prisma.$transaction(async (tx) => {
-      const schedule = await tx.subjectTeacherClass.update({
-        where: {
-          id: scheduleId,
-        },
-        data: {
+    const schedule = await $db.transaction(async (tx) => {
+      const schedule = await tx
+        .update($schema.subjectsTeachersClasses)
+        .set({
           teacherId: input.teacherId,
           subjectId: input.subjectId,
           classId,
           startTime: input.startTime,
           endTime: input.endTime,
           calendarRule: input.calendarRule,
-        },
-      });
+        })
+        .where(eq($schema.subjectsTeachersClasses.id, scheduleId))
+        .returning();
 
-      await tx.subjectStudent.deleteMany({
-        where: { subjectId: schedule.id },
-      });
+      await tx
+        .delete($schema.subjectsStudents)
+        .where(eq($schema.subjectsStudents.subjectId, schedule[0].id));
 
-      await tx.subjectStudent.createMany({
-        data: input.students.map((item: string) => ({
+      await tx.insert($schema.subjectsStudents).values(
+        input.students.map((item: string) => ({
           studentId: item,
-          subjectId: schedule.id,
-        })),
-      });
+          subjectId: schedule[0].id,
+        }))
+      );
 
       const scheduleWithStudents =
-        await tx.subjectTeacherClass.findFirstOrThrow({
-          where: { id: schedule.id, classId },
-          include: {
+        await tx.query.subjectsTeachersClasses.findFirst({
+          where: (subject, { and, eq }) =>
+            and(eq(subject.id, scheduleId), eq(subject.classId, classId)),
+          with: {
             teacher: true,
             subject: true,
             students: {
@@ -64,6 +65,7 @@ export default defineEventHandler(async (event) => {
 
       return scheduleWithStudents;
     });
+    return schedule;
   } catch (e) {
     return createError({
       statusCode: 500,

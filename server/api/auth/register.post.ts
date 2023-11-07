@@ -1,10 +1,10 @@
-import { PASSPORT_TYPE, ROLE, TOKEN_TYPE } from "@prisma/client";
-
 import { object, string } from "zod";
-import * as bcrypt from "bcrypt";
-import { prisma } from "~/prisma/db";
+import { createId } from "@paralleldrive/cuid2";
+import { generateRandomString, alphabet } from "oslo/random";
+import { ROLE, TOKEN_TYPE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema, $dayjs, $verificationTokenController } = useNuxtApp();
   const input = await useValidatedBody(
     event,
     object({
@@ -19,40 +19,45 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          email: input.email,
-          firstName: input.firstName,
-          lastName: input.lastName,
-          telephone: input.telephone,
-        },
+    const user = await auth.createUser({
+      userId: createId(),
+      key: {
+        providerId: "email",
+        providerUserId: input.email,
+        password: input.password,
+      },
+      attributes: {
+        firstName: input.firstName,
+        lastName: input.lastName,
+        telephone: input.telephone,
+        email: input.email,
+      },
+    });
+
+    const verificationToken = $verificationTokenController.createToken(
+      generateRandomString(63, alphabet("a-z", "0-9")),
+      user.email
+    );
+
+    await $db.transaction(async (tx) => {
+      await tx.insert($schema.tokens).values({
+        email: user.email,
+        tokenType: TOKEN_TYPE.VALIDATION,
+        createdAt: BigInt($dayjs.utc().unix()),
+        token: verificationToken.value,
       });
-      await tx.token.create({
-        data: {
-          email: input.email,
-          tokenType: TOKEN_TYPE.VALIDATION,
-        },
-      });
-      await tx.userPassport.create({
-        data: {
-          password: bcrypt.hashSync(input.password, 10),
-          passportType: PASSPORT_TYPE.PASSWORD,
-          userId: user.id,
-        },
-      });
-      const school = await tx.school.create({
-        data: {
+
+      const school = await tx
+        .insert($schema.schools)
+        .values({
           name: input.schoolName,
           acronym: input.schoolAcronym,
-        },
-      });
-      await tx.schoolUser.create({
-        data: {
-          schoolId: school.id,
-          userId: user.id,
-          role: ROLE.DIRECTOR,
-        },
+        })
+        .returning();
+      await tx.insert($schema.schoolUsers).values({
+        schoolId: school[0].id,
+        userId: user.id,
+        role: ROLE.DIRECTOR,
       });
       return user;
     });

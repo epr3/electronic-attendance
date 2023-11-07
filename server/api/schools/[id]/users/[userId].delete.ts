@@ -1,16 +1,22 @@
-import { ROLE } from "@prisma/client";
-import { prisma } from "~/prisma/db";
+import { and, eq } from "drizzle-orm";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const userId = event.context.params!.userId;
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    await prisma.schoolUser.delete({
-      where: { schoolId_userId: { schoolId: id, userId } },
-    });
+    await $db
+      .delete($schema.schoolUsers)
+      .where(
+        and(
+          eq($schema.schoolUsers.userId, userId),
+          eq($schema.schoolUsers.schoolId, id)
+        )
+      );
     return sendNoContent(event, 204);
   } catch (e) {
     return createError({

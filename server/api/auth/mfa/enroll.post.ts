@@ -1,8 +1,8 @@
 import { object, string, boolean } from "zod";
-import { prisma } from "~/prisma/db";
 
 export default defineEventHandler(async (event) => {
-  const user = await useServerAuth(event);
+  const { $db, $schema } = useNuxtApp();
+
   const input = await useValidatedBody(
     event,
     object({
@@ -12,24 +12,19 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const userObject = await prisma.user.findFirstOrThrow({
-      where: { email: user.email },
-      include: { mfa: true },
-    });
+    const user = useServerUser();
 
-    await prisma.userMfa.upsert({
-      where: {
-        userId: userObject.id,
-      },
-      update: {
-        mfaSmsOnly: input.smsOnly,
-      },
-      create: {
-        userId: userObject.id,
-        mfaSecret: input.secret,
-        mfaSmsOnly: input.smsOnly,
-      },
-    });
+    await $db
+      .insert($schema.userMfas)
+      .values({
+        secret: input.secret,
+        userId: user.value!.id,
+        smsOnly: input.smsOnly,
+      })
+      .onConflictDoUpdate({
+        target: $schema.userMfas.userId,
+        set: { smsOnly: input.smsOnly },
+      });
 
     return sendNoContent(event, 204);
   } catch (e) {

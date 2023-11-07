@@ -6,8 +6,8 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  (e: "page:set", page: string): void;
-  (e: "page-size:set", pageSize: string): void;
+  (e: "page:set", page: number): void;
+  (e: "page-size:set", pageSize: number): void;
   (e: "page:prev"): void;
   (e: "page:next"): void;
 }>();
@@ -42,7 +42,7 @@ const pageSizes = [5, 10, 25, 30, 40];
     <Select
       :model-value="pageSize"
       name="pageSize"
-      @update:model-value="(data) => $emit('page-size:set', data)"
+      @update:model-value="(data) => $emit('page-size:set', data as number)"
     >
       <option v-for="item in pageSizes" :key="`pageSize-${item}`" :value="item">
         {{ item }}

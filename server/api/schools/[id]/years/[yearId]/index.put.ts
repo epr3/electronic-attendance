@@ -1,8 +1,9 @@
-import { ROLE } from "@prisma/client";
+import { eq } from "drizzle-orm";
 import { array, object, string } from "zod";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const yearId = event.context.params!.yearId;
 
@@ -16,39 +17,37 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    return await prisma.$transaction(async (tx) => {
-      await tx.schoolYear.update({
-        where: { id: yearId },
-        data: {
+    const year = await $db.transaction(async (tx) => {
+      await tx
+        .update($schema.schoolYears)
+        .set({
           schoolDateRule: input.schoolDateRule,
-        },
-      });
+        })
+        .where(eq($schema.schoolYears.id, yearId));
 
-      await tx.schoolYearHolidays.deleteMany({
-        where: { schoolYearId: yearId },
-      });
+      await tx
+        .delete($schema.schoolYearHolidays)
+        .where(eq($schema.schoolYearHolidays.schoolYearId, yearId));
 
-      await tx.schoolYearHolidays.createMany({
-        data: input.holidayDateRules.map(
-          (item: { name: string; rule: string }) => ({
-            name: item.name,
-            holidayDateRule: item.rule,
-          })
-        ),
-      });
-      return await tx.schoolYear.findFirstOrThrow({
-        where: {
-          schoolId: id,
-          id: yearId,
-        },
-        include: {
+      await tx.insert($schema.schoolYearHolidays).values(
+        input.holidayDateRules.map((item: { name: string; rule: string }) => ({
+          name: item.name,
+          holidayDateRule: item.rule,
+        }))
+      );
+      return await tx.query.schoolYears.findFirst({
+        where: (schoolYear, { and, eq }) =>
+          and(eq(schoolYear.schoolId, yearId), eq(schoolYear.schoolId, id)),
+        with: {
           holidays: true,
         },
       });
     });
+
+    return year;
   } catch (e) {
     return createError({
       statusCode: 500,

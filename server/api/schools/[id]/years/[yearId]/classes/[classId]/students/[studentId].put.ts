@@ -1,8 +1,8 @@
-import { ROLE } from "@prisma/client";
 import { object, string } from "zod";
-import { prisma } from "~/prisma/db";
+import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
+  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const studentId = event.context.params!.studentId;
 
@@ -13,13 +13,13 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     // TODO: remove the join table record if the student has events for the class
-    await prisma.classStudent.create({
-      data: { classId: input.classId, studentId },
-    });
+    await $db
+      .insert($schema.classesStudents)
+      .values({ classId: input.classId, studentId });
     return sendNoContent(event, 204);
   } catch (e) {
     return createError({

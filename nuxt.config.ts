@@ -16,6 +16,10 @@ export default defineNuxtConfig({
     ],
   },
 
+  nitro: {
+    moduleSideEffects: ["lucia/polyfill/node"],
+  },
+
   modules: [
     "@nuxtjs/eslint-module",
     "@unocss/nuxt",
@@ -56,6 +60,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     vonageApiKey: process.env.VONAGE_API_KEY,
     vonageApiSecret: process.env.VONAGE_API_SECRET,
+    databaseUrl: process.env.DATABASE_URL,
   },
 
   devtools: {

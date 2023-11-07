@@ -1,19 +1,27 @@
-import { authenticator } from "otplib";
-import { prisma } from "~/prisma/db";
-
 export default defineEventHandler(async (event) => {
-  const user = await useServerAuth(event);
-
   try {
-    const userObject = await prisma.user.findFirstOrThrow({
-      where: { email: user.email },
-      include: { mfa: true },
+    const { $db, $totpController } = useNuxtApp();
+    const user = useServerUser();
+
+    const mfa = await $db.query.userMfas.findFirst({
+      where: (mfa, { eq }) => eq(mfa.userId, user.value!.id),
     });
-    if (user.mfa?.mfaSmsOnly) {
-      const token = authenticator.generate(userObject.mfa!.mfaSecret);
+
+    if (!mfa) {
+      return createError({
+        statusCode: 401,
+        statusMessage: "UNAUTHORIZED",
+        message: "Invalid session.",
+      });
+    }
+
+    const token = await $totpController.generate(
+      new TextEncoder().encode(mfa.secret)
+    );
+    if (mfa.smsOnly) {
       // re-enable when have money
       const from = "CatalogID";
-      const to = user.telephone.split("+")[1];
+      const to = user.value!.telephone.split("+")[1];
       const text = `Your verification code is ${token}`;
       return { from, to, text };
       // await ctx.vonage.send({ from, to, text });
