@@ -8,6 +8,20 @@
       "when": 1698945331608,
       "tag": "0000_melted_strong_guy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1699378375650,
+      "tag": "0001_amusing_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1699380161015,
+      "tag": "0002_shiny_chat",
+      "breakpoints": true
     }
   ]
 }

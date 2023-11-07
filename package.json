@@ -60,6 +60,7 @@
     "clsx": "^2.0.0",
     "dayjs": "^1.11.10",
     "drizzle-orm": "^0.28.6",
+    "drizzle-zod": "^0.5.1",
     "lodash-es": "^4.17.21",
     "lucia": "^2.7.2",
     "modern-errors": "^7.0.0",

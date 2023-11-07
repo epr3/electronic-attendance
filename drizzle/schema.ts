@@ -15,6 +15,7 @@ export enum TOKEN_TYPE {
 }
 
 export enum ROLE {
+  SUPERADMIN = "SUPERADMIN",
   ADMIN = "ADMIN",
   DIRECTOR = "DIRECTOR",
   SCHOOL = "SCHOOL",
@@ -40,6 +41,7 @@ export enum APPROVAL_STATUS {
 }
 
 export const role = pgEnum("role", [
+  ROLE.SUPERADMIN,
   ROLE.ADMIN,
   ROLE.DIRECTOR,
   ROLE.SCHOOL,

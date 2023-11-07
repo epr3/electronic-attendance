@@ -1,6 +1,11 @@
 <script lang="ts" setup>
 import { object, string, array } from "zod";
-import { Class, ClassStudent, ROLE, User } from "@prisma/client";
+import { ROLE } from "~/drizzle/schema";
+import {
+  SelectUserType,
+  SelectClassType,
+  SelectClassStudentType,
+} from "~/drizzle/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -12,11 +17,16 @@ const studentsPageSize = 12;
 const headTeacherPage = 1;
 const headTeacherPageSize = 12;
 
-const classObject = ref<(Class & { students: ClassStudent[] }) | null>(null);
+const classObject = ref<
+  | (SelectClassType & {
+      students: SelectClassStudentType[];
+    })
+  | null
+>(null);
 
 const { data } = await useAsyncData<{
-  students: { users: (User & { role: ROLE })[] };
-  teachers: { users: (User & { role: ROLE })[] };
+  students: { users: (SelectUserType & { role: ROLE })[] };
+  teachers: { users: (SelectUserType & { role: ROLE })[] };
 }>(
   "classForm" + route.params.classId ? `-${route.params.classId}` : "",
   async () => {
@@ -39,7 +49,7 @@ const { data } = await useAsyncData<{
           },
         };
     const [students, teachers] = await Promise.all([
-      $fetch<{ users: (User & { role: ROLE })[] }>(apiObject.route, {
+      $fetch<{ users: (SelectUserType & { role: ROLE })[] }>(apiObject.route, {
         query: {
           ...apiObject.query,
           page: studentsPage,
@@ -47,7 +57,7 @@ const { data } = await useAsyncData<{
           role: ROLE.STUDENT,
         },
       }),
-      $fetch<{ users: (User & { role: ROLE })[] }>(apiObject.route, {
+      $fetch<{ users: (SelectUserType & { role: ROLE })[] }>(apiObject.route, {
         query: {
           ...apiObject.query,
           page: headTeacherPage,
@@ -62,7 +72,11 @@ const { data } = await useAsyncData<{
 );
 
 if (route.params.classId) {
-  const { data } = await useFetch<Class & { students: ClassStudent[] }>(
+  const { data } = await useFetch<
+    SelectClassType & {
+      students: SelectClassStudentType[];
+    }
+  >(
     $api.years.classes.id(route.params.classId as string)({
       schoolId: route.params.id as string,
       yearId: route.params.yearId as string,

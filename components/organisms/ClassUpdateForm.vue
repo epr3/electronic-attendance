@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { Class } from "@prisma/client";
 import { object, string } from "zod";
+import { SelectClassType } from "~/drizzle/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -11,7 +11,7 @@ const generalError = ref("");
 const page = 1;
 const pageSize = 12;
 
-const { data } = await useFetch<{ classes: Class[] }>(
+const { data } = await useFetch<{ classes: SelectClassType[] }>(
   $api.years.classes.index({
     schoolId: route.params.id as string,
     yearId: route.params.yearId as string,

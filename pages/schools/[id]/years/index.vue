@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { SchoolYear } from "@prisma/client";
 import { rrulestr } from "rrule";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
+import { SelectSchoolYearType } from "~/drizzle/types";
 
 const actions = inject(ModalActionSymbol);
 
@@ -12,7 +12,7 @@ const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
-  years: SchoolYear[];
+  years: SelectSchoolYearType[];
   count: number;
 }>($api.years.index({ schoolId: route.params.id as string }), {
   query: {

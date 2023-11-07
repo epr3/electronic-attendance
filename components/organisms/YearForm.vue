@@ -1,23 +1,26 @@
 <script lang="ts" setup>
-import { SchoolYear, SchoolYearHolidays } from "@prisma/client";
 import { RRule, datetime, rrulestr } from "rrule";
 import { array, string, object } from "zod";
+import {
+  SelectSchoolYearHolidaysType,
+  SelectSchoolYearType,
+} from "~/drizzle/types";
 
 const route = useRoute();
 const { $dayjs, $api, $routes } = useNuxtApp();
 const steps = ["Select dates", "Select holidays", "Verify dates"];
 
 const year = ref<
-  | (SchoolYear & {
-      holidays: SchoolYearHolidays[];
+  | (SelectSchoolYearType & {
+      holidays: SelectSchoolYearHolidaysType[];
     })
   | null
 >(null);
 
 if (route.params.yearId) {
   const { data } = await useFetch<
-    SchoolYear & {
-      holidays: SchoolYearHolidays[];
+    SelectSchoolYearType & {
+      holidays: SelectSchoolYearHolidaysType[];
     }
   >($api.years.index({ schoolId: route.params.id as string }), {});
   year.value = data.value;

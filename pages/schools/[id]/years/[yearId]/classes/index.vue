@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { Class, User } from "@prisma/client";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
+import { SelectClassType, SelectUserType } from "~/drizzle/types";
 
 const actions = inject(ModalActionSymbol);
 
@@ -11,11 +11,8 @@ const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
-  classes: (Class & {
-    _count: {
-      students: number;
-    };
-    headTeacher: User;
+  classes: (SelectClassType & {
+    headTeacher: SelectUserType;
   })[];
   count: number;
 }>(
@@ -38,7 +35,7 @@ const classes = computed(() =>
           id: item.id,
           title: item.title,
           headTeacher: `${item.headTeacher.firstName} ${item.headTeacher.lastName}`,
-          noOfStudents: item._count.students,
+          // noOfStudents: item._count.students,
         };
       })
     : []

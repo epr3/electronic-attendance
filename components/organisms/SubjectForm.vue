@@ -1,7 +1,6 @@
 <script lang="ts" setup>
-import { Subject } from "@prisma/client";
-
 import { object, string } from "zod";
+import { SelectSubjectType } from "~/drizzle/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -10,7 +9,7 @@ const { $api, $routes } = useNuxtApp();
 const subject = ref({});
 
 if (route.params.subjectId) {
-  subject.value = await useFetch<Subject>(
+  subject.value = await useFetch<SelectSubjectType>(
     $api.subjects.id(route.params.subjectId as string)({
       schoolId: route.params.id as string,
     })

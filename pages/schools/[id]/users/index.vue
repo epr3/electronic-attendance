@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { User, ROLE } from "@prisma/client";
-
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
+import { ROLE } from "~/drizzle/schema";
+import { SelectUserType } from "~/drizzle/types";
 
 const actions = inject(ModalActionSymbol);
 
@@ -12,7 +12,7 @@ const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
-  users: (User & { role: ROLE })[];
+  users: (SelectUserType & { role: ROLE })[];
   count: number;
 }>($api.users.index({ schoolId: route.params.id as string }), {
   query: {
@@ -33,7 +33,7 @@ const columnHeaders = [
   { name: "Role", value: "role" },
   { name: "Telephone", value: "telephone" },
   { name: "Verified At", value: "verifiedAt" },
-] as { name: string; value: keyof ({ role: ROLE } & User) }[];
+] as { name: string; value: keyof ({ role: ROLE } & SelectUserType) }[];
 
 const deleteUser = (userId: string) =>
   $fetch($api.users.id(userId)({ schoolId: route.params.id as string }), {
@@ -70,7 +70,7 @@ const deleteUser = (userId: string) =>
               cell.value === "role"
                 ? row[cell.value].slice(0, 1).toUpperCase() +
                   row[cell.value].slice(1).toLowerCase()
-                : row[cell.value]
+                : row[cell.value as keyof SelectUserType]
             }}
           </TableCell>
 

@@ -6,8 +6,8 @@ const props = defineProps<{
 }>();
 
 defineEmits<{
-  (e: "page:set", page: number): void;
-  (e: "page-size:set", pageSize: number): void;
+  (e: "page:set", page: string): void;
+  (e: "page-size:set", pageSize: string): void;
   (e: "page:prev"): void;
   (e: "page:next"): void;
 }>();
@@ -30,7 +30,7 @@ const pageSizes = [5, 10, 25, 30, 40];
         :key="page"
         :page="page"
         :is-active="page === currentPage"
-        @click="$emit('page:set', page)"
+        @click="$emit('page:set', page.toString())"
       />
       <PaginationButton
         :disabled="currentPage === totalPages"
@@ -42,7 +42,7 @@ const pageSizes = [5, 10, 25, 30, 40];
     <Select
       :model-value="pageSize"
       name="pageSize"
-      @update:model-value="(data) => $emit('page-size:set', data as number)"
+      @update:model-value="(data) => $emit('page-size:set', data as string)"
     >
       <option v-for="item in pageSizes" :key="`pageSize-${item}`" :value="item">
         {{ item }}

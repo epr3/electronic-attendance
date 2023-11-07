@@ -1,12 +1,17 @@
 <script lang="ts" setup>
-import { ROLE, type School, type SchoolUser, type User } from "@prisma/client";
+import { ROLE } from "~/drizzle/schema";
+import {
+  SelectSchoolType,
+  SelectSchoolUserType,
+  SelectUserType,
+} from "~/drizzle/types";
 
 const { $api, $routes } = useNuxtApp();
 
 const props = defineProps<{
-  user: User & {
-    school: (SchoolUser & {
-      school: School;
+  user: SelectUserType & {
+    school: (SelectSchoolUserType & {
+      school: SelectSchoolType;
     })[];
   };
 }>();

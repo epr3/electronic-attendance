@@ -1,14 +1,15 @@
 <script lang="ts" setup>
-import { ROLE, User } from "@prisma/client";
 import { object, string, nativeEnum } from "zod";
+import { ROLE } from "~/drizzle/schema";
+import { SelectUserType } from "~/drizzle/types";
 
 const route = useRoute();
 const { $routes, $api } = useNuxtApp();
 
-const user = ref<(User & { role: ROLE }) | null>(null);
+const user = ref<(SelectUserType & { role: ROLE }) | null>(null);
 
 if (route.params.userId) {
-  const { data } = await useFetch<User & { role: ROLE }>(
+  const { data } = await useFetch<SelectUserType & { role: ROLE }>(
     $routes.users.get(route.params.userId as string)({
       schoolId: route.params.id as string,
     })

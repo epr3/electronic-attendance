@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { ROLE, User } from "@prisma/client";
-
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
+import { ROLE } from "~/drizzle/schema";
+import { SelectUserType } from "~/drizzle/types";
 
 const actions = inject(ModalActionSymbol);
 
@@ -11,7 +11,7 @@ const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
-  users: (User & { role: ROLE })[];
+  users: (SelectUserType & { role: ROLE })[];
   count: number;
 }>(`/api/school/${route.params.id}/users`, {
   query: {
@@ -30,7 +30,7 @@ const studentId = ref("");
 const columnHeaders = [
   { name: "First Name", value: "firstName" },
   { name: "Last Name", value: "lastName" },
-] as { name: string; value: keyof User }[];
+] as { name: string; value: keyof SelectUserType }[];
 
 const deleteStudent = (studentId: string) =>
   $fetch(

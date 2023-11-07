@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { Subject } from "@prisma/client";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
+import { SelectSubjectType } from "~/drizzle/types";
 
 const actions = inject(ModalActionSymbol);
 
@@ -12,7 +12,7 @@ const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
   usePagination();
 
 const { data, refresh } = await useFetch<{
-  subjects: Subject[];
+  subjects: SelectSubjectType[];
   count: number;
 }>($api.subjects.index({ schoolId: route.params.id as string }), {
   query: {

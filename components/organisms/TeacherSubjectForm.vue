@@ -1,8 +1,13 @@
 <script lang="ts" setup>
-import { ROLE, Subject, SubjectTeacherClass, User } from "@prisma/client";
 import { RRule, datetime, rrulestr } from "rrule";
 
 import { array, string, object } from "zod";
+import { ROLE } from "~/drizzle/schema";
+import {
+  SelectSubjectTeacherClassType,
+  SelectSubjectType,
+  SelectUserType,
+} from "~/drizzle/types";
 
 const route = useRoute();
 const { $dayjs, $routes, $api } = useNuxtApp();
@@ -18,7 +23,7 @@ const subjectsPageSize = 12;
 const { data } = await useAsyncData("teacherSubjectForm", async () => {
   const [students, teachers, subjectsData] = await Promise.all([
     $fetch<{
-      users: (User & {
+      users: (SelectUserType & {
         role: ROLE;
       })[];
     }>($routes.users.index({ schoolId: route.params.id as string }), {
@@ -30,7 +35,7 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
       },
     }),
     $fetch<{
-      users: (User & {
+      users: (SelectUserType & {
         role: ROLE;
       })[];
     }>($routes.users.index({ schoolId: route.params.id as string }), {
@@ -41,7 +46,7 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
       },
     }),
     $fetch<{
-      subjects: Subject[];
+      subjects: SelectSubjectType[];
     }>($api.subjects.index({ schoolId: route.params.id as string }), {
       query: { page: subjectsPage, pageSize: subjectsPageSize },
     }),
@@ -51,7 +56,7 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
 
   if (route.params.subjectId) {
     schedule = await $fetch<
-      SubjectTeacherClass & { students: { studentId: string }[] }
+      SelectSubjectTeacherClassType & { students: { studentId: string }[] }
     >(
       $api.years.classes.schedules.id(route.params.subjectId as string)({
         schoolId: route.params.id as string,
