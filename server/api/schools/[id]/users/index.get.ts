@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
       if (includeClass) {
         if (role === ROLE.STUDENT) {
           conditions = or(
-            eq($schema.classStudent.classId, includeClass as string),
+            eq($schema.classesStudents.classId, includeClass as string),
             eq($schema.classes.schoolYearId, excludeYear as string)
           );
         } else if (role === ROLE.TEACHER) {
@@ -63,8 +63,8 @@ export default defineEventHandler(async (event) => {
         eq($schema.classes.schoolYearId, $schema.schoolYears.id)
       )
       .leftJoin(
-        $schema.classStudent,
-        eq($schema.classStudent.classId, $schema.classes.id)
+        $schema.classesStudents,
+        eq($schema.classesStudents.classId, $schema.classes.id)
       )
       .where(
         and(
