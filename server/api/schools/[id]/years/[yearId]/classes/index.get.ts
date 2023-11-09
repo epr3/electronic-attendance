@@ -2,7 +2,6 @@ import { sql, eq, and } from "drizzle-orm";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const query = getQuery(event);
 
   const page = parseInt(query.page as string) ?? 1;
@@ -14,7 +13,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [classes, result] = await Promise.all([
-      $db.query.classes.findMany({
+      db.query.classes.findMany({
         where: (classObj, { and, eq }) =>
           and(eq(classObj.schoolId, id), eq(classObj.schoolYearId, yearId)),
         with: {
@@ -23,13 +22,13 @@ export default defineEventHandler(async (event) => {
         offset: (page - 1) * pageSize,
         limit: pageSize,
       }),
-      $db
+      db
         .select({ count: sql<number>`COUNT(*)` })
-        .from($schema.schoolYears)
+        .from(schema.schoolYears)
         .where(
           and(
-            eq($schema.schoolYears.schoolId, id),
-            eq($schema.schoolYears.id, yearId)
+            eq(schema.schoolYears.schoolId, id),
+            eq(schema.schoolYears.id, yearId)
           )
         ),
     ]);

@@ -4,10 +4,9 @@ export async function useUserRoleSchool(
   schoolId: string,
   roles: ROLE[] = [ROLE.ADMIN, ROLE.DIRECTOR, ROLE.TEACHER]
 ) {
-  const { $db } = useNuxtApp();
   const user = useServerUser();
 
-  const schoolUser = await $db.query.schoolUsers.findFirst({
+  const schoolUser = await db.query.schoolsUsers.findFirst({
     where: (schoolUser, { eq, and }) =>
       and(
         eq(schoolUser.schoolId, schoolId),

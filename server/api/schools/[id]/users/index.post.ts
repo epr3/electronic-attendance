@@ -4,7 +4,6 @@ import { nativeEnum, object, string } from "zod";
 import { ROLE, TOKEN_TYPE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema, $dayjs, $verificationTokenController } = useNuxtApp();
   const id = event.context.params!.id;
 
   const input = await useValidatedBody(
@@ -21,34 +20,30 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const user = await $db.transaction(async (tx) => {
+    const user = await db.transaction(async (tx) => {
       const user = await tx
-        .insert($schema.users)
+        .insert(schema.users)
         .values({
           firstName: input.firstName,
           lastName: input.lastName,
           email: input.email,
           telephone: input.telephone,
-          createdAt: BigInt($dayjs().utc().unix()),
-          updatedAt: BigInt($dayjs().utc().unix()),
+          createdAt: dayjs().utc().toDate(),
+          updatedAt: dayjs().utc().toDate(),
         })
         .returning()
         .onConflictDoNothing();
-      if ($dayjs(Number(user[0].createdAt)).isSame(Number(user[0].updatedAt))) {
-        const token = $verificationTokenController.createToken(
-          generateRandomString(63, alphabet("a-z", "0-9")),
-          user[0].email
-        );
-        await tx.insert($schema.tokens).values({
+      if (dayjs(Number(user[0].createdAt)).isSame(Number(user[0].updatedAt))) {
+        await tx.insert(schema.tokens).values({
           email: input.email,
           tokenType: TOKEN_TYPE.RESET_PASSWORD,
-          createdAt: BigInt($dayjs().utc().unix()),
-          token: token.value,
+          createdAt: dayjs().utc().toDate(),
+          token: generateRandomString(63, alphabet("a-z", "0-9")),
         });
       }
 
       const schoolUser = await tx
-        .insert($schema.schoolUsers)
+        .insert(schema.schoolsUsers)
         .values({
           schoolId: id,
           userId: user[0].id,

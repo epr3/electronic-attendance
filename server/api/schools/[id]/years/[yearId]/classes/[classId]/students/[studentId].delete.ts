@@ -2,7 +2,6 @@ import { and, eq } from "drizzle-orm";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const classId = event.context.params!.classId;
   const studentId = event.context.params!.studentId;
@@ -10,12 +9,12 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    await $db
-      .delete($schema.classesStudents)
+    await db
+      .delete(schema.classesStudents)
       .where(
         and(
-          eq($schema.classesStudents.classId, classId),
-          eq($schema.classesStudents.studentId, studentId)
+          eq(schema.classesStudents.classId, classId),
+          eq(schema.classesStudents.studentId, studentId)
         )
       );
 

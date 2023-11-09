@@ -3,7 +3,6 @@ import { object, string, array } from "zod";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const yearId = event.context.params!.yearId;
   const classId = event.context.params!.classId;
@@ -21,9 +20,9 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const classes = await $db.transaction(async (tx) => {
+    const classes = await db.transaction(async (tx) => {
       const group = await tx
-        .update($schema.classes)
+        .update(schema.classes)
         .set({
           title: input.title,
           headTeacherId: input.headTeacherId,
@@ -31,14 +30,14 @@ export default defineEventHandler(async (event) => {
           schoolId: id,
           schoolYearId: yearId,
         })
-        .where(eq($schema.classes.id, classId))
+        .where(eq(schema.classes.id, classId))
         .returning();
 
       await tx
-        .delete($schema.classesStudents)
-        .where(eq($schema.classesStudents.classId, group[0].id));
+        .delete(schema.classesStudents)
+        .where(eq(schema.classesStudents.classId, group[0].id));
 
-      await tx.insert($schema.classesStudents).values(
+      await tx.insert(schema.classesStudents).values(
         input.students.map((item: string) => ({
           studentId: item,
           classId: group[0].id,

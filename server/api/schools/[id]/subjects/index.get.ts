@@ -3,7 +3,6 @@ import { sql, eq } from "drizzle-orm";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const query = getQuery(event);
 
   const page = parseInt(query.page as string) ?? 1;
@@ -14,15 +13,15 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [subjects, result] = await Promise.all([
-      $db.query.subjects.findMany({
+      db.query.subjects.findMany({
         where: (subjects, { eq }) => eq(subjects.schoolId, id),
         limit: pageSize,
         offset: (page - 1) * pageSize,
       }),
-      $db
+      db
         .select({ count: sql<number>`COUNT(*)` })
-        .from($schema.userMfas)
-        .where(eq($schema.subjects.schoolId, id)),
+        .from(schema.userMfas)
+        .where(eq(schema.subjects.schoolId, id)),
     ]);
     return { subjects, count: result[0].count };
   } catch (e) {

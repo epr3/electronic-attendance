@@ -4,7 +4,8 @@ import { lucia } from "lucia";
 import { h3 } from "lucia/middleware";
 import postgres from "postgres";
 
-const sql = postgres(process.env.DATABASE_URL as string);
+const runtimeConfig = useRuntimeConfig();
+const sql = postgres(runtimeConfig.databaseUrl);
 
 export const auth = lucia({
   adapter: postgresAdapter(sql, {

@@ -1,10 +1,11 @@
+import { decodeHex } from "oslo/encoding";
+
 export default defineEventHandler(async (event) => {
   try {
-    const { $db, $totpController } = useNuxtApp();
-    const user = useServerUser();
+    const user = await useServerUser(event);
 
-    const mfa = await $db.query.userMfas.findFirst({
-      where: (mfa, { eq }) => eq(mfa.userId, user.value!.id),
+    const mfa = await db.query.userMfas.findFirst({
+      where: (mfa, { eq }) => eq(mfa.userId, user.id),
     });
 
     if (!mfa) {
@@ -15,13 +16,11 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const token = await $totpController.generate(
-      new TextEncoder().encode(mfa.secret)
-    );
+    const token = await totpController.generate(decodeHex(mfa.secret));
     if (mfa.smsOnly) {
       // re-enable when have money
       const from = "CatalogID";
-      const to = user.value!.telephone.split("+")[1];
+      const to = user.telephone.split("+")[1];
       const text = `Your verification code is ${token}`;
       return { from, to, text };
       // await ctx.vonage.send({ from, to, text });

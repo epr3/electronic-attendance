@@ -2,7 +2,6 @@ import { object, string } from "zod";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const studentId = event.context.params!.studentId;
 
@@ -17,8 +16,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     // TODO: remove the join table record if the student has events for the class
-    await $db
-      .insert($schema.classesStudents)
+    await db
+      .insert(schema.classesStudents)
       .values({ classId: input.classId, studentId });
     return sendNoContent(event, 204);
   } catch (e) {

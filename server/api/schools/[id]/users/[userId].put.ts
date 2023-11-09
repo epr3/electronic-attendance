@@ -3,7 +3,6 @@ import { nativeEnum, object, string } from "zod";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const userId = event.context.params!.userId;
 
@@ -21,24 +20,24 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    await $db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       await tx
-        .update($schema.users)
+        .update(schema.users)
         .set({
           firstName: input.firstName,
           lastName: input.lastName,
           email: input.email,
           telephone: input.telephone,
         })
-        .where(eq($schema.users.id, userId));
+        .where(eq(schema.users.id, userId));
 
       await tx
-        .update($schema.schoolUsers)
+        .update(schema.schoolUsers)
         .set({ role: input.role })
         .where(
           and(
-            eq($schema.schoolUsers.userId, userId),
-            eq($schema.schoolUsers.schoolId, id)
+            eq(schema.schoolUsers.userId, userId),
+            eq(schema.schoolUsers.schoolId, id)
           )
         );
     });

@@ -3,7 +3,6 @@ import { array, object, string } from "zod";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const yearId = event.context.params!.yearId;
 
@@ -20,19 +19,19 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const year = await $db.transaction(async (tx) => {
+    const year = await db.transaction(async (tx) => {
       await tx
-        .update($schema.schoolYears)
+        .update(schema.schoolYears)
         .set({
           schoolDateRule: input.schoolDateRule,
         })
-        .where(eq($schema.schoolYears.id, yearId));
+        .where(eq(schema.schoolYears.id, yearId));
 
       await tx
-        .delete($schema.schoolYearHolidays)
-        .where(eq($schema.schoolYearHolidays.schoolYearId, yearId));
+        .delete(schema.schoolYearHolidays)
+        .where(eq(schema.schoolYearHolidays.schoolYearId, yearId));
 
-      await tx.insert($schema.schoolYearHolidays).values(
+      await tx.insert(schema.schoolYearHolidays).values(
         input.holidayDateRules.map((item: { name: string; rule: string }) => ({
           name: item.name,
           holidayDateRule: item.rule,

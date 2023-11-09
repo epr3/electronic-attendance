@@ -3,7 +3,6 @@ import { eq } from "drizzle-orm";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const classId = event.context.params!.classId;
   const scheduleId = event.context.params!.scheduleId;
@@ -23,9 +22,9 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const schedule = await $db.transaction(async (tx) => {
+    const schedule = await db.transaction(async (tx) => {
       const schedule = await tx
-        .update($schema.subjectsTeachersClasses)
+        .update(schema.subjectsTeachersClasses)
         .set({
           teacherId: input.teacherId,
           subjectId: input.subjectId,
@@ -34,14 +33,14 @@ export default defineEventHandler(async (event) => {
           endTime: input.endTime,
           calendarRule: input.calendarRule,
         })
-        .where(eq($schema.subjectsTeachersClasses.id, scheduleId))
+        .where(eq(schema.subjectsTeachersClasses.id, scheduleId))
         .returning();
 
       await tx
-        .delete($schema.subjectsStudents)
-        .where(eq($schema.subjectsStudents.subjectId, schedule[0].id));
+        .delete(schema.subjectsStudents)
+        .where(eq(schema.subjectsStudents.subjectId, schedule[0].id));
 
-      await tx.insert($schema.subjectsStudents).values(
+      await tx.insert(schema.subjectsStudents).values(
         input.students.map((item: string) => ({
           studentId: item,
           subjectId: schedule[0].id,

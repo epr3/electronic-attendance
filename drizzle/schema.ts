@@ -1,12 +1,12 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import {
-  bigint,
   pgEnum,
   pgTable,
   text,
   varchar,
   boolean,
+  timestamp,
 } from "drizzle-orm/pg-core";
 
 export enum TOKEN_TYPE {
@@ -80,15 +80,13 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 100 }).notNull().unique(),
   telephone: varchar("telephone", { length: 100 }).notNull(),
   mfaEnabled: boolean("mfa_enabled").default(false),
-  verifiedAt: bigint("verified_at", { mode: "bigint" }),
-  createdAt: bigint("created_at", { mode: "bigint" }).notNull(),
-  updatedAt: bigint("updated_at", { mode: "bigint" }).notNull(),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const userKeys = pgTable("user_keys", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => createId()),
+  id: text("id").primaryKey(),
   userId: text("user_id")
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
@@ -103,8 +101,7 @@ export const userSessions = pgTable("user_sessions", {
     .references(() => users.id, { onDelete: "cascade" })
     .notNull(),
   mfaVerified: boolean("mfa_verified").default(false),
-  activeExpires: bigint("active_expires", { mode: "bigint" }).notNull(),
-  idleExpires: bigint("idle_expires", { mode: "bigint" }).notNull(),
+  expiresAt: timestamp("expires_at").notNull().defaultNow(),
 });
 
 export const tokens = pgTable("tokens", {
@@ -116,7 +113,7 @@ export const tokens = pgTable("tokens", {
     .notNull(),
   tokenType: tokenType("token_type").notNull(),
   token: text("token").notNull(),
-  createdAt: bigint("expires", { mode: "bigint" }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const schools = pgTable("schools", {
@@ -128,7 +125,7 @@ export const schools = pgTable("schools", {
   logo: text("logo"),
 });
 
-export const schoolUsers = pgTable("school_users", {
+export const schoolsUsers = pgTable("schools_users", {
   id: text("id")
     .primaryKey()
     .$defaultFn(() => createId()),
@@ -300,7 +297,7 @@ export const events = pgTable("events", {
       onDelete: "cascade",
     })
     .notNull(),
-  createdAt: bigint("created_at", { mode: "bigint" }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
   eventType: eventType("event_type").notNull(),
 });
 
@@ -354,7 +351,7 @@ export const approvals = pgTable("approvals", {
   value: varchar("value", { length: 100 }).notNull(),
   description: text("description"),
   approvalStatus: approvalStatus("approval_status").notNull(),
-  createdAt: bigint("created_at", { mode: "bigint" }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
   requestorId: text("requestor_id")
     .references(() => users.id, {
       onDelete: "cascade",
@@ -369,7 +366,7 @@ export const userRelations = relations(users, ({ many, one }) => ({
     fields: [users.id],
     references: [userMfas.userId],
   }),
-  schools: many(schoolUsers),
+  schools: many(schoolsUsers),
   classes: many(classesStudents),
 }));
 
@@ -387,23 +384,23 @@ export const userSessionsRelations = relations(userSessions, ({ one }) => ({
   }),
 }));
 
-const schoolRelations = relations(schools, ({ many }) => ({
-  users: many(schoolUsers),
+export const schoolRelations = relations(schools, ({ many }) => ({
+  users: many(schoolsUsers),
   years: many(schoolYears),
 }));
 
-const schoolUserRelations = relations(schoolUsers, ({ one }) => ({
+export const schoolsUserRelations = relations(schoolsUsers, ({ one }) => ({
   school: one(schools, {
-    fields: [schoolUsers.schoolId],
+    fields: [schoolsUsers.schoolId],
     references: [schools.id],
   }),
   user: one(users, {
-    fields: [schoolUsers.userId],
+    fields: [schoolsUsers.userId],
     references: [users.id],
   }),
 }));
 
-const schoolYearRelations = relations(schoolYears, ({ one, many }) => ({
+export const schoolYearRelations = relations(schoolYears, ({ one, many }) => ({
   holidays: many(schoolYearHolidays),
   school: one(schools, {
     fields: [schoolYears.schoolId],
@@ -411,16 +408,29 @@ const schoolYearRelations = relations(schoolYears, ({ one, many }) => ({
   }),
 }));
 
-const classesStudentsRelations = relations(classesStudents, ({ one }) => ({
-  class: one(classes, {
-    fields: [classesStudents.classId],
-    references: [classes.id],
-  }),
-  student: one(users, {
-    fields: [classesStudents.studentId],
-    references: [users.id],
-  }),
-}));
+export const schoolYearHolidaysRelations = relations(
+  schoolYearHolidays,
+  ({ one }) => ({
+    schoolYear: one(schoolYears, {
+      fields: [schoolYearHolidays.schoolYearId],
+      references: [schoolYears.id],
+    }),
+  })
+);
+
+export const classesStudentsRelations = relations(
+  classesStudents,
+  ({ one }) => ({
+    class: one(classes, {
+      fields: [classesStudents.classId],
+      references: [classes.id],
+    }),
+    student: one(users, {
+      fields: [classesStudents.studentId],
+      references: [users.id],
+    }),
+  })
+);
 
 export const schema = {
   users,
@@ -430,14 +440,15 @@ export const schema = {
   userKeysRelations,
   userSessionsRelations,
   schoolRelations,
-  schoolUserRelations,
+  schoolsUserRelations,
   schoolYearRelations,
   userMfas,
   tokens,
   schools,
-  schoolUsers,
+  schoolsUsers,
   schoolYears,
   schoolYearHolidays,
+  schoolYearHolidaysRelations,
   parentsStudents,
   subjects,
   classes,

@@ -17,7 +17,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- CREATE TYPE "role" AS ENUM('ADMIN', 'DIRECTOR', 'SCHOOL', 'TEACHER', 'STUDENT');
+ CREATE TYPE "role" AS ENUM('SUPERADMIN', 'ADMIN', 'DIRECTOR', 'SCHOOL', 'TEACHER', 'STUDENT');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -47,14 +47,8 @@ CREATE TABLE IF NOT EXISTS "approvals" (
 	"value" varchar(100) NOT NULL,
 	"description" text,
 	"approval_status" "approval_status" NOT NULL,
-	"created_at" bigint NOT NULL,
+	"created_at" timestamp DEFAULT now(),
 	"requestor_id" text NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "class_student" (
-	"id" text PRIMARY KEY NOT NULL,
-	"class_id" text NOT NULL,
-	"student_id" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "classes" (
@@ -66,11 +60,17 @@ CREATE TABLE IF NOT EXISTS "classes" (
 	"head_teacher_id" text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "classes_students" (
+	"id" text PRIMARY KEY NOT NULL,
+	"class_id" text NOT NULL,
+	"student_id" text NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "events" (
 	"id" text PRIMARY KEY NOT NULL,
 	"student_id" text NOT NULL,
 	"subject_id" text NOT NULL,
-	"created_at" bigint NOT NULL,
+	"created_at" timestamp DEFAULT now(),
 	"event_type" "event_type" NOT NULL
 );
 --> statement-breakpoint
@@ -85,13 +85,6 @@ CREATE TABLE IF NOT EXISTS "parents_students" (
 	"id" text PRIMARY KEY NOT NULL,
 	"parent_id" text NOT NULL,
 	"student_id" text NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE IF NOT EXISTS "school_users" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text,
-	"school_id" text NOT NULL,
-	"role" "role" NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "school_year_holidays" (
@@ -112,6 +105,13 @@ CREATE TABLE IF NOT EXISTS "schools" (
 	"name" varchar(100) NOT NULL,
 	"acronym" varchar(10) NOT NULL,
 	"logo" text
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "schools_users" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"school_id" text NOT NULL,
+	"role" "role" NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "subjects" (
@@ -138,10 +138,10 @@ CREATE TABLE IF NOT EXISTS "subjects_teachers_classes" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "tokens" (
 	"id" text PRIMARY KEY NOT NULL,
-	"email" text NOT NULL,
+	"email" varchar NOT NULL,
 	"token_type" "token_type" NOT NULL,
 	"token" text NOT NULL,
-	"expires" bigint NOT NULL
+	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user_keys" (
@@ -160,8 +160,9 @@ CREATE TABLE IF NOT EXISTS "user_mfas" (
 CREATE TABLE IF NOT EXISTS "user_sessions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
-	"active_expires" bigint NOT NULL,
-	"idle_expires" bigint NOT NULL
+	"mfa_verified" boolean DEFAULT false,
+	"active_expires" timestamp DEFAULT now(),
+	"idle_expires" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
@@ -170,9 +171,10 @@ CREATE TABLE IF NOT EXISTS "users" (
 	"last_name" varchar(100) NOT NULL,
 	"email" varchar(100) NOT NULL,
 	"telephone" varchar(100) NOT NULL,
-	"verified_at" bigint,
-	"created_at" bigint NOT NULL,
-	"update_at" bigint NOT NULL,
+	"mfa_enabled" boolean DEFAULT false,
+	"verified_at" timestamp,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
@@ -201,18 +203,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "class_student" ADD CONSTRAINT "class_student_class_id_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "classes"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "class_student" ADD CONSTRAINT "class_student_student_id_users_id_fk" FOREIGN KEY ("student_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "classes" ADD CONSTRAINT "classes_school_id_schools_id_fk" FOREIGN KEY ("school_id") REFERENCES "schools"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -226,6 +216,18 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "classes" ADD CONSTRAINT "classes_head_teacher_id_users_id_fk" FOREIGN KEY ("head_teacher_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "classes_students" ADD CONSTRAINT "classes_students_class_id_classes_id_fk" FOREIGN KEY ("class_id") REFERENCES "classes"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "classes_students" ADD CONSTRAINT "classes_students_student_id_users_id_fk" FOREIGN KEY ("student_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -261,18 +263,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "school_users" ADD CONSTRAINT "school_users_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "school_users" ADD CONSTRAINT "school_users_school_id_schools_id_fk" FOREIGN KEY ("school_id") REFERENCES "schools"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "school_year_holidays" ADD CONSTRAINT "school_year_holidays_school_year_id_school_years_id_fk" FOREIGN KEY ("school_year_id") REFERENCES "school_years"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -280,6 +270,18 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "school_years" ADD CONSTRAINT "school_years_school_id_schools_id_fk" FOREIGN KEY ("school_id") REFERENCES "schools"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "schools_users" ADD CONSTRAINT "schools_users_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "schools_users" ADD CONSTRAINT "schools_users_school_id_schools_id_fk" FOREIGN KEY ("school_id") REFERENCES "schools"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

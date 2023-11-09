@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "pg",
-  "id": "ce8dba80-033c-4784-8417-8b2e58a58249",
+  "id": "f18ef75f-0716-4593-adc0-aa36c5c94219",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "absence_docs": {
@@ -123,9 +123,10 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         },
         "requestor_id": {
           "name": "requestor_id",
@@ -150,53 +151,6 @@
           "tableFrom": "approvals",
           "tableTo": "users",
           "columnsFrom": ["requestor_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "class_student": {
-      "name": "class_student",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "class_id": {
-          "name": "class_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "student_id": {
-          "name": "student_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "class_student_class_id_classes_id_fk": {
-          "name": "class_student_class_id_classes_id_fk",
-          "tableFrom": "class_student",
-          "tableTo": "classes",
-          "columnsFrom": ["class_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "class_student_student_id_users_id_fk": {
-          "name": "class_student_student_id_users_id_fk",
-          "tableFrom": "class_student",
-          "tableTo": "users",
-          "columnsFrom": ["student_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -280,6 +234,53 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "classes_students": {
+      "name": "classes_students",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "class_id": {
+          "name": "class_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "student_id": {
+          "name": "student_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "classes_students_class_id_classes_id_fk": {
+          "name": "classes_students_class_id_classes_id_fk",
+          "tableFrom": "classes_students",
+          "tableTo": "classes",
+          "columnsFrom": ["class_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "classes_students_student_id_users_id_fk": {
+          "name": "classes_students_student_id_users_id_fk",
+          "tableFrom": "classes_students",
+          "tableTo": "users",
+          "columnsFrom": ["student_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
     "events": {
       "name": "events",
       "schema": "",
@@ -304,9 +305,10 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         },
         "event_type": {
           "name": "event_type",
@@ -430,59 +432,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "school_users": {
-      "name": "school_users",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "school_id": {
-          "name": "school_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "role": {
-          "name": "role",
-          "type": "role",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "school_users_user_id_users_id_fk": {
-          "name": "school_users_user_id_users_id_fk",
-          "tableFrom": "school_users",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "school_users_school_id_schools_id_fk": {
-          "name": "school_users_school_id_schools_id_fk",
-          "tableFrom": "school_users",
-          "tableTo": "schools",
-          "columnsFrom": ["school_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
     "school_year_holidays": {
       "name": "school_year_holidays",
       "schema": "",
@@ -596,6 +545,59 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "schools_users": {
+      "name": "schools_users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "school_id": {
+          "name": "school_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "role",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "schools_users_user_id_users_id_fk": {
+          "name": "schools_users_user_id_users_id_fk",
+          "tableFrom": "schools_users",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "schools_users_school_id_schools_id_fk": {
+          "name": "schools_users_school_id_schools_id_fk",
+          "tableFrom": "schools_users",
+          "tableTo": "schools",
+          "columnsFrom": ["school_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -776,7 +778,7 @@
         },
         "email": {
           "name": "email",
-          "type": "text",
+          "type": "varchar",
           "primaryKey": false,
           "notNull": true
         },
@@ -792,11 +794,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "expires": {
-          "name": "expires",
-          "type": "bigint",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -913,17 +916,26 @@
           "primaryKey": false,
           "notNull": true
         },
+        "mfa_verified": {
+          "name": "mfa_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
         "active_expires": {
           "name": "active_expires",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         },
         "idle_expires": {
           "name": "idle_expires",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -975,23 +987,32 @@
           "primaryKey": false,
           "notNull": true
         },
+        "mfa_enabled": {
+          "name": "mfa_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
         "verified_at": {
           "name": "verified_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         },
-        "update_at": {
-          "name": "update_at",
-          "type": "bigint",
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -1033,6 +1054,7 @@
     "role": {
       "name": "role",
       "values": {
+        "SUPERADMIN": "SUPERADMIN",
         "ADMIN": "ADMIN",
         "DIRECTOR": "DIRECTOR",
         "SCHOOL": "SCHOOL",

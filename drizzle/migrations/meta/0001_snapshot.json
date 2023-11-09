@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "pg",
-  "id": "b93f76a5-d2fe-41f7-80f8-bde6b30c902d",
-  "prevId": "ce8dba80-033c-4784-8417-8b2e58a58249",
+  "id": "e0a5a5bb-688f-41c0-bc54-5d94a9747449",
+  "prevId": "f18ef75f-0716-4593-adc0-aa36c5c94219",
   "tables": {
     "absence_docs": {
       "name": "absence_docs",
@@ -123,9 +123,10 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         },
         "requestor_id": {
           "name": "requestor_id",
@@ -304,9 +305,10 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         },
         "event_type": {
           "name": "event_type",
@@ -430,59 +432,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "school_users": {
-      "name": "school_users",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "school_id": {
-          "name": "school_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "role": {
-          "name": "role",
-          "type": "role",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "school_users_user_id_users_id_fk": {
-          "name": "school_users_user_id_users_id_fk",
-          "tableFrom": "school_users",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "school_users_school_id_schools_id_fk": {
-          "name": "school_users_school_id_schools_id_fk",
-          "tableFrom": "school_users",
-          "tableTo": "schools",
-          "columnsFrom": ["school_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
     "school_year_holidays": {
       "name": "school_year_holidays",
       "schema": "",
@@ -596,6 +545,59 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "schools_users": {
+      "name": "schools_users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "school_id": {
+          "name": "school_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "role",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "schools_users_user_id_users_id_fk": {
+          "name": "schools_users_user_id_users_id_fk",
+          "tableFrom": "schools_users",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "schools_users_school_id_schools_id_fk": {
+          "name": "schools_users_school_id_schools_id_fk",
+          "tableFrom": "schools_users",
+          "tableTo": "schools",
+          "columnsFrom": ["school_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -792,11 +794,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "expires": {
-          "name": "expires",
-          "type": "bigint",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -920,17 +923,12 @@
           "notNull": false,
           "default": false
         },
-        "active_expires": {
-          "name": "active_expires",
-          "type": "bigint",
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
-        },
-        "idle_expires": {
-          "name": "idle_expires",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
+          "notNull": false,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -991,21 +989,23 @@
         },
         "verified_at": {
           "name": "verified_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "bigint",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -1047,6 +1047,7 @@
     "role": {
       "name": "role",
       "values": {
+        "SUPERADMIN": "SUPERADMIN",
         "ADMIN": "ADMIN",
         "DIRECTOR": "DIRECTOR",
         "SCHOOL": "SCHOOL",
@@ -1065,11 +1066,7 @@
   "schemas": {},
   "_meta": {
     "schemas": {},
-    "tables": {
-      "\"class_student\"": "\"classes_students\""
-    },
-    "columns": {
-      "\"users\".\"update_at\"": "\"users\".\"updated_at\""
-    }
+    "tables": {},
+    "columns": {}
   }
 }

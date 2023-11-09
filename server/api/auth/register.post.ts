@@ -1,10 +1,10 @@
 import { object, string } from "zod";
-import { createId } from "@paralleldrive/cuid2";
 import { generateRandomString, alphabet } from "oslo/random";
+import { HMAC } from "oslo/crypto";
+import { encodeHex } from "oslo/encoding";
 import { ROLE, TOKEN_TYPE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema, $dayjs, $verificationTokenController } = useNuxtApp();
   const input = await useValidatedBody(
     event,
     object({
@@ -19,50 +19,56 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const user = await auth.createUser({
-      userId: createId(),
-      key: {
-        providerId: "email",
-        providerUserId: input.email,
-        password: input.password,
-      },
-      attributes: {
-        firstName: input.firstName,
-        lastName: input.lastName,
-        telephone: input.telephone,
-        email: input.email,
-      },
-    });
-
-    const verificationToken = $verificationTokenController.createToken(
-      generateRandomString(63, alphabet("a-z", "0-9")),
-      user.email
-    );
-
-    await $db.transaction(async (tx) => {
-      await tx.insert($schema.tokens).values({
-        email: user.email,
-        tokenType: TOKEN_TYPE.VALIDATION,
-        createdAt: BigInt($dayjs.utc().unix()),
-        token: verificationToken.value,
-      });
-
-      const school = await tx
-        .insert($schema.schools)
+    await db.transaction(async (tx) => {
+      const user = await tx
+        .insert(schema.users)
         .values({
-          name: input.schoolName,
-          acronym: input.schoolAcronym,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email,
+          telephone: input.telephone,
         })
         .returning();
-      await tx.insert($schema.schoolUsers).values({
-        schoolId: school[0].id,
-        userId: user.id,
-        role: ROLE.DIRECTOR,
+
+      await tx.insert(schema.userKeys).values({
+        id: `email:${user[0].email}`,
+        userId: user[0].id,
+        hashedPassword: await argon2id.hash(input.password),
       });
-      return user;
+
+      if (dayjs(Number(user[0].createdAt)).isSame(Number(user[0].updatedAt))) {
+        await tx.insert(schema.tokens).values({
+          email: input.email,
+          token: generateRandomString(63, alphabet("a-z", "0-9")),
+          tokenType: TOKEN_TYPE.VALIDATION,
+        });
+
+        const secret = await new HMAC("SHA-1").generateKey();
+
+        await tx.insert(schema.userMfas).values({
+          userId: user[0].id,
+          secret: encodeHex(secret),
+          smsOnly: false,
+        });
+
+        const school = await tx
+          .insert(schema.schools)
+          .values({
+            name: input.schoolName,
+            acronym: input.schoolAcronym,
+          })
+          .returning();
+        await tx.insert(schema.schoolsUsers).values({
+          schoolId: school[0].id,
+          userId: user[0].id,
+          role: ROLE.DIRECTOR,
+        });
+        return user;
+      }
     });
     return sendNoContent(event, 204);
   } catch (e) {
+    console.error(e);
     return createError({
       statusCode: 500,
       statusMessage: "INTERNAL_SERVER_ERROR",

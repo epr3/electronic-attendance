@@ -1,14 +1,13 @@
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db } = useNuxtApp();
   const id = event.context.params!.id;
   const classId = event.context.params!.classId;
 
   await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const classWithStudents = await $db.query.classes.findFirst({
+    const classWithStudents = await db.query.classes.findFirst({
       where: (classObj, { eq }) => eq(classObj.id, classId),
       with: {
         headTeacher: true,

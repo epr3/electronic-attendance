@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const yearId = event.context.params!.yearId;
 
@@ -10,9 +9,9 @@ export default defineEventHandler(async (event) => {
 
   try {
     // TODO: think if we want to delete years with data
-    await $db
-      .delete($schema.schoolYears)
-      .where(eq($schema.schoolYears.id, yearId));
+    await db
+      .delete(schema.schoolYears)
+      .where(eq(schema.schoolYears.id, yearId));
     return sendNoContent(event, 204);
   } catch (e) {
     return createError({

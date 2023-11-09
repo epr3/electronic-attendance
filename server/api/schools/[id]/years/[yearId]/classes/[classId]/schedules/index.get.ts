@@ -2,7 +2,6 @@ import { sql, eq } from "drizzle-orm";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const classId = event.context.params!.classId;
 
@@ -10,7 +9,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [schedules, result] = await Promise.all([
-      $db.query.subjectsTeachersClasses.findMany({
+      db.query.subjectsTeachersClasses.findMany({
         where: (subject, { eq }) => eq(subject.classId, classId),
         with: {
           teacher: true,
@@ -22,10 +21,10 @@ export default defineEventHandler(async (event) => {
           },
         },
       }),
-      $db
+      db
         .select({ count: sql<number>`COUNT(*)` })
-        .from($schema.subjectsTeachersClasses)
-        .where(eq($schema.subjectsTeachersClasses.classId, classId)),
+        .from(schema.subjectsTeachersClasses)
+        .where(eq(schema.subjectsTeachersClasses.classId, classId)),
     ]);
 
     return { schedules, count: result[0].count };

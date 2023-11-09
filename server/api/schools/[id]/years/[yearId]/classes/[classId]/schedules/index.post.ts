@@ -2,7 +2,6 @@ import { array, object, string } from "zod";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
   const classId = event.context.params!.classId;
 
@@ -22,9 +21,9 @@ export default defineEventHandler(async (event) => {
 
   try {
     event.node.res.statusCode = 201;
-    const schedule = await $db.transaction(async (tx) => {
+    const schedule = await db.transaction(async (tx) => {
       const schedule = await tx
-        .insert($schema.subjectsTeachersClasses)
+        .insert(schema.subjectsTeachersClasses)
         .values({
           teacherId: input.teacherId,
           subjectId: input.subjectId,
@@ -35,7 +34,7 @@ export default defineEventHandler(async (event) => {
         })
         .returning();
 
-      await tx.insert($schema.subjectsStudents).values(
+      await tx.insert(schema.subjectsStudents).values(
         input.students.map((item: string) => ({
           studentId: item,
           subjectId: schedule[0].id,

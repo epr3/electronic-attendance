@@ -2,7 +2,6 @@ import { object, string } from "zod";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const id = event.context.params!.id;
 
   const input = await useValidatedBody(
@@ -16,8 +15,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     event.node.res.statusCode = 201;
-    const subject = await $db
-      .insert($schema.subjects)
+    const subject = await db
+      .insert(schema.subjects)
       .values({
         name: input.name,
         schoolId: id,

@@ -2,7 +2,6 @@ import { eq, and, or, ne, isNull } from "drizzle-orm";
 import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
   const query = getQuery(event);
 
   const page = parseInt(query.page as string) ?? 1;
@@ -16,24 +15,24 @@ export default defineEventHandler(async (event) => {
   if (role) {
     if (excludeYear) {
       if (role === ROLE.STUDENT) {
-        conditions = eq($schema.classes.schoolYearId, excludeYear as string);
+        conditions = eq(schema.classes.schoolYearId, excludeYear as string);
       } else if (role === ROLE.TEACHER) {
         conditions = or(
-          isNull($schema.classes.headTeacherId),
-          ne($schema.classes.schoolYearId, excludeYear as string)
+          isNull(schema.classes.headTeacherId),
+          ne(schema.classes.schoolYearId, excludeYear as string)
         );
       }
 
       if (includeClass) {
         if (role === ROLE.STUDENT) {
           conditions = or(
-            eq($schema.classesStudents.classId, includeClass as string),
-            eq($schema.classes.schoolYearId, excludeYear as string)
+            eq(schema.classesStudents.classId, includeClass as string),
+            eq(schema.classes.schoolYearId, excludeYear as string)
           );
         } else if (role === ROLE.TEACHER) {
           conditions = or(
-            eq($schema.classes.id, includeClass as string),
-            eq($schema.classes.schoolYearId, excludeYear as string)
+            eq(schema.classes.id, includeClass as string),
+            eq(schema.classes.schoolYearId, excludeYear as string)
           );
         }
       }
@@ -43,33 +42,33 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const response = await $db
+    const response = await db
       .select()
-      .from($schema.users)
+      .from(schema.users)
       .leftJoin(
-        $schema.schoolUsers,
-        eq($schema.users.id, $schema.schoolUsers.userId)
+        schema.schoolUsers,
+        eq(schema.users.id, schema.schoolUsers.userId)
       )
       .leftJoin(
-        $schema.schools,
-        eq($schema.schoolUsers.schoolId, $schema.schools.id)
+        schema.schools,
+        eq(schema.schoolUsers.schoolId, schema.schools.id)
       )
       .leftJoin(
-        $schema.schoolYears,
-        eq($schema.schoolYears.schoolId, $schema.schools.id)
+        schema.schoolYears,
+        eq(schema.schoolYears.schoolId, schema.schools.id)
       )
       .leftJoin(
-        $schema.classes,
-        eq($schema.classes.schoolYearId, $schema.schoolYears.id)
+        schema.classes,
+        eq(schema.classes.schoolYearId, schema.schoolYears.id)
       )
       .leftJoin(
-        $schema.classesStudents,
-        eq($schema.classesStudents.classId, $schema.classes.id)
+        schema.classesStudents,
+        eq(schema.classesStudents.classId, schema.classes.id)
       )
       .where(
         and(
-          eq($schema.schools.id, id),
-          eq($schema.schoolUsers.role, role as ROLE),
+          eq(schema.schools.id, id),
+          eq(schema.schoolUsers.role, role as ROLE),
           conditions
         )
       )

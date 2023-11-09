@@ -1,8 +1,6 @@
 import { object, string, boolean } from "zod";
 
 export default defineEventHandler(async (event) => {
-  const { $db, $schema } = useNuxtApp();
-
   const input = await useValidatedBody(
     event,
     object({
@@ -12,17 +10,17 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const user = useServerUser();
+    const user = await useServerUser(event);
 
-    await $db
-      .insert($schema.userMfas)
+    await db
+      .insert(schema.userMfas)
       .values({
         secret: input.secret,
-        userId: user.value!.id,
+        userId: user.id,
         smsOnly: input.smsOnly,
       })
       .onConflictDoUpdate({
-        target: $schema.userMfas.userId,
+        target: schema.userMfas.userId,
         set: { smsOnly: input.smsOnly },
       });
 

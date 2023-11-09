@@ -1,7 +1,20 @@
+import { eq } from "drizzle-orm";
+
 export default defineEventHandler(async (event) => {
-  const authRequest = auth.handleRequest(event);
+  const authCookie = getCookie(event, sessionCookieController.cookieName);
+
+  const sessionCookie = sessionCookieController.parseCookies(authCookie);
+  if (!sessionCookie) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "UNAUTHORIZED",
+      message: "Invalid session.",
+    });
+  }
   // check if user is authenticated
-  const session = await authRequest.validate();
+  const session = await db
+    .delete(schema.userSessions)
+    .where(eq(schema.userSessions.id, sessionCookie));
   if (!session) {
     throw createError({
       statusCode: 401,
@@ -9,9 +22,10 @@ export default defineEventHandler(async (event) => {
       message: "Invalid session.",
     });
   }
-  // make sure to invalidate the current session!
-  await auth.invalidateSession(session.sessionId);
-  // delete session cookie
-  authRequest.setSession(null);
+
+  const blankCookie = sessionCookieController.createBlankSessionCookie();
+
+  setCookie(event, sessionCookieController.cookieName, blankCookie.serialize());
+
   return sendRedirect(event, "/login");
 });

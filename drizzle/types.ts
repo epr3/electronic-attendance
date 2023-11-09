@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   classes,
   classesStudents,
-  schoolUsers,
+  schoolsUsers,
   schoolYearHolidays,
   schoolYears,
   schools,
@@ -29,7 +29,7 @@ export const selectSchoolSchema = createSelectSchema(schools);
 
 export type SelectSchoolType = z.infer<typeof selectSchoolSchema>;
 
-export const selectSchoolUserSchema = createSelectSchema(schoolUsers);
+export const selectSchoolUserSchema = createSelectSchema(schoolsUsers);
 
 export type SelectSchoolUserType = z.infer<typeof selectSchoolUserSchema>;
 
