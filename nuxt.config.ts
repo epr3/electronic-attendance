@@ -16,10 +16,6 @@ export default defineNuxtConfig({
     ],
   },
 
-  nitro: {
-    moduleSideEffects: ["lucia/polyfill/node"],
-  },
-
   modules: [
     "@nuxtjs/eslint-module",
     "@unocss/nuxt",
