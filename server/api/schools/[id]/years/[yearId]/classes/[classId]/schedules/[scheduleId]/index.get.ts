@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const classId = event.context.params!.classId;
   const scheduleId = event.context.params!.scheduleId;
 
-  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     const schedule = await db.query.subjectsTeachersClasses.findFirst({

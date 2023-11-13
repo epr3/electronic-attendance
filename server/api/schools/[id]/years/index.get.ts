@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const pageSize = parseInt(query.page as string) ?? 12;
   const id = event.context.params!.id;
 
-  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     const [years, result] = await Promise.all([

@@ -2,13 +2,14 @@
 import { ROLE } from "~/drizzle/schema";
 
 const user = useUser();
+
 if (!user.value) {
   await navigateTo("/login");
 }
 
 if (
   user.value &&
-  !user.value.mfa &&
+  !user.value.mfaEnabled &&
   user.value.roles.some((item) =>
     [ROLE.ADMIN, ROLE.DIRECTOR, ROLE.TEACHER].includes(item)
   )
@@ -16,10 +17,8 @@ if (
   await navigateTo("/mfa");
 }
 
-if (user.value && !user.value.mfaVerified) {
+if (user.value && !user.value.session.mfaVerified) {
   await navigateTo("/mfa/verify");
-} else {
-  await navigateTo("/login");
 }
 </script>
 

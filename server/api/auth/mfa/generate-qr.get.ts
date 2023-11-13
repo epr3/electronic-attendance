@@ -1,36 +1,20 @@
 import { toDataURL } from "qrcode";
 import { createTOTPKeyURI } from "oslo/otp";
-import { decodeHex } from "oslo/encoding";
+import { encodeHex } from "oslo/encoding";
+import { HMAC } from "oslo/crypto";
 
 export default defineEventHandler(async (event) => {
   try {
     const user = await useServerUser(event);
 
-    const mfa = await db.query.userMfas.findFirst({
-      where: (mfa, { eq }) => eq(mfa.userId, user.id),
-    });
+    const secret = await new HMAC("SHA-1").generateKey();
 
-    console.log(mfa);
+    const uri = createTOTPKeyURI("Electronic Attendance", user!.email, secret);
 
-    if (!mfa) {
-      return createError({
-        statusCode: 401,
-        statusMessage: "UNAUTHORIZED",
-        message: "Invalid session.",
-      });
-    }
-
-    const uri = createTOTPKeyURI(
-      "Electronic Attendance",
-      user!.email,
-      decodeHex(mfa.secret)
-    );
-    console.log(uri);
     const qrCode = await toDataURL(uri);
 
-    return { qrCode };
+    return { qrCode, secret: encodeHex(secret) };
   } catch (e) {
-    console.error(e);
     return createError({
       statusCode: 500,
       statusMessage: "INTERNAL_SERVER_ERROR",

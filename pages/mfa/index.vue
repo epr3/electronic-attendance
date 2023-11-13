@@ -31,13 +31,8 @@ const onSubmit = handleSubmit(async (values) => {
   await useAsyncData("verify", () =>
     $fetch($api.auth.mfaEnroll, {
       method: "POST",
-      body: { secret: secret.value, smsOnly: false },
-    }).then(() =>
-      $fetch($api.auth.mfaVerify, {
-        method: "POST",
-        body: { token: values.token },
-      })
-    )
+      body: { secret: secret.value, smsOnly: false, token: values.token },
+    })
   );
 
   return await navigateTo($routes.home);

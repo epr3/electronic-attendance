@@ -11,6 +11,7 @@ import {
   subjects,
   subjectsTeachersClasses,
   users,
+  userSessions,
 } from "./schema";
 
 export const selectUserSchema = createSelectSchema(users);
@@ -55,3 +56,7 @@ export const selectSubjectTeacherClassSchema = createSelectSchema(
 export type SelectSubjectTeacherClassType = z.infer<
   typeof selectSubjectTeacherClassSchema
 >;
+
+export const selectUserSessionSchema = createSelectSchema(userSessions);
+
+export type SelectUserSessionType = z.infer<typeof selectUserSessionSchema>;

@@ -1,7 +1,20 @@
-import type { User } from "lucia";
+import { ROLE } from "~/drizzle/schema";
+import {
+  SelectSchoolType,
+  SelectSchoolUserType,
+  SelectUserSessionType,
+  SelectUserType,
+} from "~/drizzle/types";
 
 export const useUser = () => {
-  const user = useState<User | null>("user", () => null);
+  const user = useState<
+    | (SelectUserType & {
+        roles: ROLE[];
+        session: SelectUserSessionType;
+        schools: (SelectSchoolUserType & { school: SelectSchoolType })[];
+      })
+    | null
+  >("user", () => null);
   return user;
 };
 

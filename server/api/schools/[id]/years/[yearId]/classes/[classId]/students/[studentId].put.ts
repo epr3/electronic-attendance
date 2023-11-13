@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     // TODO: remove the join table record if the student has events for the class

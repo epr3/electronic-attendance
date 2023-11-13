@@ -68,7 +68,6 @@ export default defineEventHandler(async (event) => {
     });
     return sendNoContent(event, 204);
   } catch (e) {
-    console.error(e);
     return createError({
       statusCode: 500,
       statusMessage: "INTERNAL_SERVER_ERROR",

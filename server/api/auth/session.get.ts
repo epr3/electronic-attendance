@@ -1,27 +1,79 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
-  const authRequest = auth.handleRequest(event);
-  const session = await authRequest.validate();
-  if (session) {
-    const userRoles = await db.query.schoolsUsers.findMany({
-      where: (schoolUsers, { eq }) => eq(schoolUsers.userId, session.user.id),
+  const cookie = getCookie(event, sessionCookieController.cookieName);
+
+  if (!cookie) {
+    return null;
+  }
+
+  const session = await db.query.userSessions.findFirst({
+    where: (sessionObj, { eq }) => eq(sessionObj.id, cookie),
+  });
+
+  if (!session) {
+    return null;
+  }
+
+  const sessionState = sessionController.getSessionState(session.expiresAt);
+
+  if (sessionState === "expired") {
+    await db
+      .delete(schema.userSessions)
+      .where(eq(schema.userSessions.id, cookie));
+    const blankCookie = sessionCookieController.createBlankSessionCookie();
+    setCookie(event, sessionCookieController.cookieName, blankCookie.value, {
+      ...blankCookie.attributes,
+    });
+    return null;
+  } else if (sessionState === "idle") {
+    const session = await db
+      .update(schema.userSessions)
+      .set({
+        expiresAt: dayjs(sessionController.createExpirationDate())
+          .utc()
+          .toDate(),
+      })
+      .where(eq(schema.userSessions.id, cookie))
+      .returning();
+
+    const updatedCookie = sessionCookieController.createSessionCookie(cookie);
+    setCookie(event, sessionCookieController.cookieName, updatedCookie.value, {
+      ...updatedCookie.attributes,
     });
 
-    const result = await db
-      .select({ count: sql<number>`COUNT(*)` })
-      .from(schema.userMfas)
-      .where(eq(schema.userMfas.userId, session.user.id));
+    const user = await db.query.users.findFirst({
+      where: (userObj, { eq }) => eq(userObj.id, session[0].userId),
+      with: {
+        schools: {
+          with: {
+            school: true,
+          },
+        },
+      },
+    });
 
-    return {
-      ...session.user,
-      mfa: result[0].count > 0,
-      mfaVerified: session.mfa_verified,
-      verified: session.user.verified_at !== null,
-      roles: userRoles.map((schoolUser) => schoolUser.role),
-    };
+    if (!user) {
+      return null;
+    }
+
+    return { ...user, session: session[0] };
+  } else {
+    const user = await db.query.users.findFirst({
+      where: (userObj, { eq }) => eq(userObj.id, session.userId),
+      with: {
+        schools: {
+          with: {
+            school: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return { ...user, session };
   }
-  return {
-    user: null,
-  };
 });

@@ -21,6 +21,7 @@ export default defineNuxtConfig({
     "@unocss/nuxt",
     "@vueuse/nuxt",
     "@vee-validate/nuxt",
+    "radix-vue/nuxt",
   ],
 
   unocss: {

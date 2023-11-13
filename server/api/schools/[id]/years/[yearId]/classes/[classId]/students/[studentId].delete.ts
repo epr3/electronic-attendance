@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const classId = event.context.params!.classId;
   const studentId = event.context.params!.studentId;
 
-  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     await db

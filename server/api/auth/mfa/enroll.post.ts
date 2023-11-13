@@ -1,3 +1,5 @@
+import { and, eq } from "drizzle-orm";
+import { decodeHex } from "oslo/encoding";
 import { object, string, boolean } from "zod";
 
 export default defineEventHandler(async (event) => {
@@ -5,24 +7,49 @@ export default defineEventHandler(async (event) => {
     event,
     object({
       secret: string(),
+      token: string(),
       smsOnly: boolean(),
     })
   );
 
   try {
+    const ok = await totpController.verify(
+      input.token,
+      decodeHex(input.secret)
+    );
+
+    if (!ok) {
+      console.log("secret bad");
+      throw createError({
+        statusCode: 401,
+        statusMessage: "UNAUTHORIZED",
+        message: "Invalid token",
+      });
+    }
+
     const user = await useServerUser(event);
 
-    await db
-      .insert(schema.userMfas)
-      .values({
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(schema.userMfas)
+        .where(eq(schema.userMfas.userId, user.id));
+
+      await tx.insert(schema.userMfas).values({
         secret: input.secret,
         userId: user.id,
         smsOnly: input.smsOnly,
-      })
-      .onConflictDoUpdate({
-        target: schema.userMfas.userId,
-        set: { smsOnly: input.smsOnly },
       });
+
+      await tx
+        .update(schema.userSessions)
+        .set({ mfaVerified: true })
+        .where(
+          and(
+            eq(schema.userSessions.userId, user.id),
+            eq(schema.userSessions.id, user.session.id)
+          )
+        );
+    });
 
     return sendNoContent(event, 204);
   } catch (e) {

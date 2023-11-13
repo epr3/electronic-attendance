@@ -67,7 +67,7 @@ export async function useServerUser(event: H3Event) {
       });
     }
 
-    return user;
+    return { ...user, session: session[0] };
   } else {
     const user = await db.query.users.findFirst({
       where: (userObj, { eq }) => eq(userObj.id, session.userId),
@@ -81,6 +81,6 @@ export async function useServerUser(event: H3Event) {
       });
     }
 
-    return user;
+    return { ...user, session };
   }
 }

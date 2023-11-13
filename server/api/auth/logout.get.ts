@@ -3,18 +3,18 @@ import { eq } from "drizzle-orm";
 export default defineEventHandler(async (event) => {
   const authCookie = getCookie(event, sessionCookieController.cookieName);
 
-  const sessionCookie = sessionCookieController.parseCookies(authCookie);
-  if (!sessionCookie) {
+  if (!authCookie) {
     throw createError({
       statusCode: 401,
       statusMessage: "UNAUTHORIZED",
-      message: "Invalid session.",
+      message: "Not logged in.",
     });
   }
+
   // check if user is authenticated
   const session = await db
     .delete(schema.userSessions)
-    .where(eq(schema.userSessions.id, sessionCookie));
+    .where(eq(schema.userSessions.id, authCookie));
   if (!session) {
     throw createError({
       statusCode: 401,

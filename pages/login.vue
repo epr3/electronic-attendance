@@ -31,13 +31,14 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
 
+  if (data.value?.mfaRequired) {
+    return await navigateTo("/mfa");
+  }
+
   if (data.value?.hasMfa) {
     return await navigateTo("/mfa/verify");
   }
 
-  if (data.value?.mfaRequired) {
-    return await navigateTo("/mfa");
-  }
   return await navigateTo("/");
 });
 </script>

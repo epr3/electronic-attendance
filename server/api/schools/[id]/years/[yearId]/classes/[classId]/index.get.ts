@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
   const classId = event.context.params!.classId;
 
-  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     const classWithStudents = await db.query.classes.findFirst({

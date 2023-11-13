@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     })
   );
 
-  await useUserRoleSchool(id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+  await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
     const classes = await db.transaction(async (tx) => {
