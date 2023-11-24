@@ -1,33 +1,37 @@
+import { type PaginationState } from "@tanstack/vue-table";
+
 export const usePagination = ({ navigation } = { navigation: true }) => {
   const route = useRoute();
 
-  const page = ref(parseInt((route.query.page as string) ?? 1, 10));
-  const pageSize = ref(parseInt((route.query.pageSize as string) ?? 5, 10));
+  const pagination = ref<PaginationState>({
+    pageIndex: parseInt((route.query.page as string) ?? 1, 10) - 1,
+    pageSize: parseInt((route.query.pageSize as string) ?? 5, 10),
+  });
 
-  const setPageSize = (data: string) => {
-    pageSize.value = parseInt(data);
-  };
+  //! MUST MATCH TANSTACK TABLE SHAPE
+  function setPagination({ pageIndex, pageSize }: PaginationState) {
+    pagination.value.pageSize = pageSize;
+    pagination.value.pageIndex = pageIndex;
 
-  const setPage = (data: string) => {
-    page.value = parseInt(data);
-  };
-
-  const nextPage = () => {
-    page.value += 1;
-  };
-
-  const prevPage = () => {
-    page.value -= 1;
-  };
-  if (navigation) {
-    watch([page, pageSize], async (newValue) => {
-      const [newPage, newPageSize] = newValue;
-      await navigateTo({
-        path: "",
-        query: { page: newPage, pageSize: newPageSize },
-      });
-    });
+    return { pageIndex, pageSize };
   }
 
-  return { page, pageSize, setPageSize, setPage, nextPage, prevPage };
+  if (navigation) {
+    watch(
+      pagination,
+      async (newValue) => {
+        const { pageIndex, pageSize } = newValue;
+        await navigateTo({
+          path: "",
+          query: { page: pageIndex + 1, pageSize },
+        });
+      },
+      { deep: true }
+    );
+  }
+
+  const page = computed(() => pagination.value.pageIndex);
+  const pageSize = computed(() => pagination.value.pageSize);
+
+  return { pagination, page, pageSize, setPagination };
 };

@@ -2,8 +2,8 @@
 import { RRule, datetime, rrulestr } from "rrule";
 import { array, string, object } from "zod";
 import {
-  SelectSchoolYearHolidaysType,
-  SelectSchoolYearType,
+  type SelectSchoolYearHolidaysType,
+  type SelectSchoolYearType,
 } from "~/drizzle/types";
 
 const route = useRoute();
@@ -22,7 +22,12 @@ if (route.params.yearId) {
     SelectSchoolYearType & {
       holidays: SelectSchoolYearHolidaysType[];
     }
-  >($api.years.index({ schoolId: route.params.id as string }), {});
+  >(
+    $api.years.id(route.params.yearId as string)({
+      schoolId: route.params.id as string,
+    }),
+    {}
+  );
   year.value = data.value;
 }
 

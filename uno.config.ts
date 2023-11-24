@@ -27,25 +27,7 @@ export default defineConfig({
   },
   transformers: [transformerVariantGroup(), transformerDirectives()],
   shortcuts: [
-    {
-      btn: "block text-center text-black min-w-[100px] py-4 px-4 font-semibold rounded shadow-md",
-    },
-    {
-      "btn-primary": "bg-brand-primary text-white",
-    },
-    {
-      "btn-success": "bg-success text-white",
-    },
-    {
-      "btn-info": "bg-info text-white",
-    },
-    {
-      "btn-error": "bg-danger text-white",
-    },
-    { "btn-disabled": "text-gray-400 bg-gray-200" },
-    { "btn-lg": "py-8 px-8 text-lg" },
-    { "btn-sm": "py-2 px-2 text-sm" },
-    { "btn-xl": "py-12 px-12 text-xl" },
+    [/^square-(.*)$/, ([, c]) => `w-${c} h-${c}`],
     { "menu-link": "block p-4 hover:bg-gray-100" },
     { "menu-header": "px-4 py-2 text-gray-400 font-bold text-sm" },
     { hr: "my-2 border-b border-gray-400" },

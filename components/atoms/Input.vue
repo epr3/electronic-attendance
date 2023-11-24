@@ -2,34 +2,32 @@
 const slots = useSlots();
 const props = withDefaults(
   defineProps<{
-    name: string;
-    label?: string;
+    defaultValue?: string | number;
+    modelValue?: string | number;
     type?: "text" | "password" | "telephone" | "email";
     placeholder?: string;
     disabled?: boolean;
   }>(),
   {
-    label: "",
+    defaultValue: "",
+    modelValue: "",
     type: "text",
     placeholder: "",
     disabled: false,
   }
 );
 
-const { value } = useField(() => props.name, undefined);
+const emits = defineEmits<{
+  (e: "update:modelValue", payload: string | number): void;
+}>();
 
-defineEmits<{ (e: "focus"): void; (e: "blur"): void }>();
+const modelValue = useVModel(props, "modelValue", emits, {
+  passive: true,
+  defaultValue: props.defaultValue,
+});
 </script>
 
 <template>
-  <label
-    v-if="label"
-    class="block text-sm font-medium text-gray-700"
-    :for="name"
-  >
-    {{ label }}
-  </label>
-
   <div class="relative flex gap-4 mt-1 rounded-md shadow-sm">
     <div
       v-if="!!slots['left-icon']"
@@ -38,15 +36,18 @@ defineEmits<{ (e: "focus"): void; (e: "blur"): void }>();
       <slot name="left-icon" />
     </div>
     <input
-      v-model="value"
+      v-model="modelValue"
       :type="type"
-      :name="name"
       :disabled="disabled"
       :placeholder="placeholder"
-      class="block w-full py-2 px-3 bg-white rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-      :class="{ 'pl-8': !!slots['left-icon'], 'pr-8': !!slots['right-icon'] }"
-      @focus="$emit('focus')"
-      @blur="$emit('blur')"
+      :class="
+        cn(
+          'block w-full py-2 px-3 bg-white rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm',
+          { 'pl-8': !!slots['left-icon'] },
+          { 'pr-8': !!slots['right-icon'] },
+          $attrs.class ?? ''
+        )
+      "
     />
     <div
       v-if="!!slots['right-icon']"

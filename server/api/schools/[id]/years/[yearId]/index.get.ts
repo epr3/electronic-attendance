@@ -15,6 +15,8 @@ export default defineEventHandler(async (event) => {
       },
     });
 
+    console.log(schoolYear);
+
     return schoolYear;
   } catch (e) {
     return createError({

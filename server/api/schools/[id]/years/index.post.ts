@@ -19,20 +19,25 @@ export default defineEventHandler(async (event) => {
   try {
     event.node.res.statusCode = 201;
     const schoolYearObj = await db.transaction(async (tx) => {
-      const schoolYearObj = await tx.insert(schema.schoolYears).values({
-        schoolId: id,
-        schoolDateRule: input.schoolDateRule,
-      });
+      const schoolYearObj = await tx
+        .insert(schema.schoolYears)
+        .values({
+          schoolId: id,
+          schoolDateRule: input.schoolDateRule,
+        })
+        .returning();
       await tx.insert(schema.schoolYearHolidays).values(
         input.holidayDateRules.map((item: { name: string; rule: string }) => ({
           name: item.name,
           holidayDateRule: item.rule,
+          schoolYearId: schoolYearObj[0].id,
         }))
       );
       return schoolYearObj;
     });
     return schoolYearObj;
   } catch (e) {
+    console.error(e);
     return createError({
       statusCode: 500,
       statusMessage: "INTERNAL_SERVER_ERROR",

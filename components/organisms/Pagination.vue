@@ -39,7 +39,7 @@ const pageSizes = [5, 10, 25, 30, 40];
       />
     </div>
 
-    <Select
+    <OldSelect
       :model-value="pageSize"
       name="pageSize"
       @update:model-value="(data) => $emit('page-size:set', data as string)"
@@ -47,6 +47,6 @@ const pageSizes = [5, 10, 25, 30, 40];
       <option v-for="item in pageSizes" :key="`pageSize-${item}`" :value="item">
         {{ item }}
       </option>
-    </Select>
+    </OldSelect>
   </div>
 </template>

@@ -55,6 +55,7 @@ export default defineEventHandler(async (event) => {
     event.node.res.statusCode = 201;
     return user;
   } catch (e) {
+    console.error(e);
     return createError({
       statusCode: 500,
       statusMessage: "INTERNAL_SERVER_ERROR",

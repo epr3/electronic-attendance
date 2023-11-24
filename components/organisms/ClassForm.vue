@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { object, string, array } from "zod";
 import { ROLE } from "~/drizzle/schema";
-import {
+import type {
   SelectUserType,
   SelectClassType,
   SelectClassStudentType,

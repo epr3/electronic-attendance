@@ -3,7 +3,7 @@ import { RRule, datetime, rrulestr } from "rrule";
 
 import { array, string, object } from "zod";
 import { ROLE } from "~/drizzle/schema";
-import {
+import type {
   SelectSubjectTeacherClassType,
   SelectSubjectType,
   SelectUserType,

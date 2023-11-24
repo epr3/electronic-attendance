@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
-import { SelectSubjectType } from "~/drizzle/types";
+import { type SelectSubjectType } from "~/drizzle/types";
 
 const route = useRoute();
-const router = useRouter();
+
 const { $api, $routes } = useNuxtApp();
 
 const subject = ref({});
@@ -56,21 +56,26 @@ const onSubmit = handleSubmit(async (values) => {
 <template>
   <div class="flex flex-col space-y-8">
     <div class="flex space-x-4 items-center">
-      <div
-        class="i-heroicons-arrow-left w-8 h-8 cursor-pointer"
-        @click="
-          () => {
-            router.go(-1);
-          }
-        "
-      />
+      <Button size="icon" as-child>
+        <NuxtLink
+          :to="$routes.subjects.index({ schoolId: route.params.id as string })"
+        >
+          <div class="i-heroicons-arrow-left" />
+        </NuxtLink>
+      </Button>
 
       <h2 class="text-2xl font-bold">New subject</h2>
     </div>
     <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
-      <FormElement name="name">
-        <Input label="Name" name="name" />
-      </FormElement>
+      <Field v-slot="{ componentField }" name="name">
+        <FormItem>
+          <FormLabel>Name</FormLabel>
+          <FormControl>
+            <Input v-bind="componentField" />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      </Field>
       <Button :disabled="isSubmitting" type="submit">Submit</Button>
     </form>
   </div>

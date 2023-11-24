@@ -83,10 +83,10 @@ const submitForm = handleSubmit((values) => {
       </div>
     </div>
     <div class="flex">
-      <Button class="rounded-0 basis-1/2" color="success" type="submit">
+      <Button class="rounded-0 basis-1/2" variant="default" type="submit">
         Submit
       </Button>
-      <Button v-close-popper class="rounded-0 basis-1/2" color="error">
+      <Button v-close-popper class="rounded-0 basis-1/2" variant="destructive">
         Close
       </Button>
     </div>

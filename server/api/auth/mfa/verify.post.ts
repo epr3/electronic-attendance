@@ -1,5 +1,6 @@
 import { object, string } from "zod";
 import { decodeHex } from "oslo/encoding";
+import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const input = await useValidatedBody(
@@ -36,8 +37,14 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    await db
+      .update(schema.userSessions)
+      .set({ mfaVerified: true })
+      .where(eq(schema.userSessions.id, user.session.id));
+
     return sendNoContent(event, 204);
   } catch (e) {
+    console.error(e);
     return createError({
       statusCode: 401,
       statusMessage: "UNAUTHORIZED",

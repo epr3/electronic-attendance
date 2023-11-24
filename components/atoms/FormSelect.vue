@@ -9,5 +9,5 @@ const { value } = useField(() => props.name, undefined);
 </script>
 
 <template>
-  <Select v-model="value" :name="name" :label="label"><slot /></Select>
+  <OldSelect v-model="value" :name="name" :label="label"><slot /></OldSelect>
 </template>

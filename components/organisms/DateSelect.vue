@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-const props = withDefaults(
+const open = ref(false);
+
+withDefaults(
   defineProps<{
     label: string;
     name: string;
@@ -7,30 +9,37 @@ const props = withDefaults(
   }>(),
   { placeholder: "YYYY-MM-DD" }
 );
-const { value, setValue } = useField<string>(() => props.name, undefined);
 </script>
 
 <template>
-  <div class="relative flex flex-col items-center gap-4">
-    <FormElement :name="name">
-      <Input :label="label" :name="name" :placeholder="placeholder">
-        <template #right-icon>
-          <VDropdown>
-            <div class="i-heroicons-calendar w-4 h-4 cursor-pointer" />
-            <template #popper="{ hide }">
-              <Calendar
-                :highlighted-date="value"
-                @select:date="
-                  (value) => {
-                    setValue(value);
-                    hide();
-                  }
-                "
+  <PopoverRoot v-model:open="open">
+    <Field
+      v-slot="{ componentField }"
+      :name="name"
+      class="relative flex flex-col items-center gap-4"
+    >
+      <FormItem>
+        <FormLabel>{{ label }}</FormLabel>
+        <FormControl>
+          <Input v-bind="componentField" :placeholder="placeholder">
+            <template #right-icon>
+              <PopoverTrigger
+                class="i-heroicons-calendar w-4 h-4 cursor-pointer"
               />
             </template>
-          </VDropdown>
-        </template>
-      </Input>
-    </FormElement>
-  </div>
+          </Input>
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+
+      <PopoverPortal>
+        <PopoverContent>
+          <Calendar
+            v-bind="componentField"
+            @update:model-value="open = false"
+          />
+        </PopoverContent>
+      </PopoverPortal>
+    </Field>
+  </PopoverRoot>
 </template>

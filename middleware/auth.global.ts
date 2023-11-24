@@ -1,15 +1,15 @@
 import { ROLE } from "~/drizzle/schema";
-import {
+import type {
   SelectSchoolType,
   SelectSchoolUserType,
   SelectUserSessionType,
   SelectUserType,
 } from "~/drizzle/types";
 
-export default defineNuxtRouteMiddleware(async () => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const { $api } = useNuxtApp();
   const user = useUser();
-  if (!user.value) {
+  if (!user.value && to.meta.layout === "auth") {
     const { data, error } = await useFetch<
       SelectUserType & {
         roles: ROLE[];

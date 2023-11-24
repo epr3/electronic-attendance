@@ -14,13 +14,15 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
+  console.log(values);
   try {
     await useFetch($api.auth.mfaVerify, {
       method: "POST",
       body: { token: values.token },
     });
+    console.log("navigate");
 
-    return await navigateTo($routes.home);
+    await navigateTo($routes.home);
   } catch (e) {
     // console.log(e);
   }
@@ -34,9 +36,16 @@ const onSubmit = handleSubmit(async (values) => {
       <h4 class="text-2xl font-bold">Verify your account</h4>
       <div class="flex flex-col items-stretch space-y-4">
         <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
-          <FormElement name="email">
-            <Input label="Token" type="text" name="token" />
-          </FormElement>
+          <Field v-slot="{ componentField }" name="token">
+            <FormItem>
+              <FormLabel>Token</FormLabel>
+              <FormControl>
+                <Input v-bind="componentField" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </Field>
+
           <Button :disabled="isSubmitting" type="submit" color="success">
             Verify
           </Button>

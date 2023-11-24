@@ -1,14 +1,13 @@
 <script lang="ts" setup>
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 import { ROLE } from "~/drizzle/schema";
-import { SelectUserType } from "~/drizzle/types";
+import { type SelectUserType } from "~/drizzle/types";
 
 const actions = inject(ModalActionSymbol);
 
 const route = useRoute();
 const { $api, $routes } = useNuxtApp();
-const { page, pageSize, setPage, setPageSize, nextPage, prevPage } =
-  usePagination();
+const { page, pageSize, setPagination } = usePagination();
 
 const { data, refresh } = await useFetch<{
   users: (SelectUserType & { role: ROLE })[];
@@ -47,26 +46,27 @@ const deleteStudent = (studentId: string) =>
 
 <template>
   <div class="flex flex-col gap-4">
-    <Button
-      color="success"
-      class="self-start"
-      :to="
-        $routes.years.classes.students.new({
-          schoolId: route.params.id as string,
-          yearId: route.params.yearId as string,
-          classId: route.params.classId as string,
-        })
-      "
-    >
-      Add student
+    <Button variant="default" class="self-start" as-child>
+      <NuxtLink
+        :to="
+          $routes.years.classes.students.new({
+            schoolId: route.params.id as string,
+            yearId: route.params.yearId as string,
+            classId: route.params.classId as string,
+          })
+        "
+      >
+        Add student
+      </NuxtLink>
     </Button>
+
     <Table full-width>
       <thead>
         <TableRow>
-          <TableHeadCell v-for="column in columnHeaders" :key="column.name">
+          <TableHead v-for="column in columnHeaders" :key="column.name">
             {{ column.name }}
-          </TableHeadCell>
-          <TableHeadCell>Actions</TableHeadCell>
+          </TableHead>
+          <TableHead>Actions</TableHead>
         </TableRow>
       </thead>
       <TableBody>

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
-import { SelectClassType } from "~/drizzle/types";
+import type { SelectClassType } from "~/drizzle/types";
 
 const route = useRoute();
 const router = useRouter();

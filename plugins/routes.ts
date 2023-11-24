@@ -32,17 +32,17 @@ const routes = {
   users: {
     new: withSchoolId("/users/new"),
     index: withSchoolId("/users"),
-    get: (userId: string) => withSchoolId(`/${userId}`),
+    get: (userId: string) => withSchoolId(`/users/${userId}`),
   },
   subjects: {
     new: withSchoolId("/subjects/new"),
     index: withSchoolId("/subjects"),
-    get: (subjectId: string) => withSchoolId(`/${subjectId}`),
+    get: (subjectId: string) => withSchoolId(`/subjects/${subjectId}`),
   },
   years: {
     new: withSchoolId("/years/new"),
     index: withSchoolId("/years"),
-    get: (yearId: string) => withSchoolId(`/${yearId}`),
+    get: (yearId: string) => withSchoolId(`/years/${yearId}`),
     classes: {
       get: (classId: string) => withYearId(`/classes/${classId}`),
       index: withYearId("/classes"),
@@ -50,14 +50,16 @@ const routes = {
       students: {
         index: withYearAndClassId("/students"),
         new: withYearAndClassId("/students/new"),
-        get: (studentId: string) => withYearAndClassId(`/${studentId}`),
+        get: (studentId: string) =>
+          withYearAndClassId(`/students/${studentId}`),
       },
       subjects: {
         index: withYearAndClassId("/subjects"),
         new: withYearAndClassId("/subjects/new"),
-        get: (subjectId: string) => withYearAndClassId(`/${subjectId}`),
+        get: (subjectId: string) =>
+          withYearAndClassId(`/subjects/${subjectId}`),
         students: (subjectId: string) =>
-          withYearAndClassId(`/${subjectId}/students`),
+          withYearAndClassId(`/subjects/${subjectId}/students`),
       },
     },
   },
@@ -100,21 +102,22 @@ const api = {
   },
   subjects: {
     index: apiWithSchoolId("/subjects"),
-    id: (subjectId: string) => apiWithSchoolId(`/${subjectId}`),
+    id: (subjectId: string) => apiWithSchoolId(`/subjects/${subjectId}`),
   },
   users: {
     index: apiWithSchoolId("/users"),
-    id: (userId: string) => apiWithSchoolId(`/${userId}`),
+    id: (userId: string) => apiWithSchoolId(`/users/${userId}`),
   },
   years: {
     index: apiWithSchoolId("/years"),
-    id: (yearId: string) => apiWithSchoolId(`/${yearId}`),
+    id: (yearId: string) => apiWithSchoolId(`/years/${yearId}`),
     classes: {
       index: apiWithYearId("/classes"),
-      id: (classId: string) => apiWithYearId(`/${classId}`),
+      id: (classId: string) => apiWithYearId(`/classes/${classId}`),
       students: {
         index: apiWithYearAndClassId("/students"),
-        id: (studentId: string) => apiWithYearAndClassId(`/${studentId}`),
+        id: (studentId: string) =>
+          apiWithYearAndClassId(`/students/${studentId}`),
       },
       schedules: {
         index: apiWithYearAndClassId("/schedules"),

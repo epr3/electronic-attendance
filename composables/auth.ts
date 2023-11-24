@@ -15,6 +15,7 @@ export const useUser = () => {
       })
     | null
   >("user", () => null);
+
   return user;
 };
 

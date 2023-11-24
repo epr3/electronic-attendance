@@ -1,5 +1,8 @@
 <script lang="ts" setup>
-import { SelectClassStudentType, SelectClassType } from "~/drizzle/types";
+import {
+  type SelectClassStudentType,
+  type SelectClassType,
+} from "~/drizzle/types";
 
 const route = useRoute();
 const { $api } = useNuxtApp();

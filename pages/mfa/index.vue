@@ -52,9 +52,15 @@ const onSubmit = handleSubmit(async (values) => {
           class="flex flex-col space-y-4 items-stretch"
           @submit="onSubmit"
         >
-          <FormElement name="token">
-            <Input label="Token" type="text" name="token" />
-          </FormElement>
+          <Field v-slot="{ componentField }" name="token">
+            <FormItem>
+              <FormLabel>Token</FormLabel>
+              <FormControl>
+                <Input v-bind="componentField" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </Field>
           <Button :disabled="isSubmitting" type="submit" color="success">
             Enroll MFA
           </Button>

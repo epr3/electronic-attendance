@@ -11,7 +11,7 @@ const { remove, push, fields } = useFieldArray(toRef(props, "name"));
   <div class="flex flex-col gap-4 items-start">
     <Button
       type="button"
-      color="success"
+      variant="default"
       @click="
         push({
           name: 'Example Holiday',
@@ -28,9 +28,14 @@ const { remove, push, fields } = useFieldArray(toRef(props, "name"));
         :key="field.key"
         class="flex flex-col gap-4 bg-white p-8"
       >
-        <FormElement :name="`${name}[${idx}].name`">
-          <Input label="Holiday name" :name="`${name}[${idx}].name`" />
-        </FormElement>
+        <Field v-slot="{ componentField }" :name="`${name}[${idx}].name`">
+          <FormItem>
+            <FormLabel>Holiday name</FormLabel>
+
+            <Input v-bind="componentField" />
+            <FormMessage />
+          </FormItem>
+        </Field>
         <div class="gap-4 grid grid-cols-1 lg:grid-cols-2">
           <DateSelect
             label="Start date"

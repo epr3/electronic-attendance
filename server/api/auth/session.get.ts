@@ -16,6 +16,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const sessionState = sessionController.getSessionState(session.expiresAt);
+  console.log(sessionState);
 
   if (sessionState === "expired") {
     await db

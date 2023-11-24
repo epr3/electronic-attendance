@@ -10,7 +10,11 @@ defineEmits<{
 </script>
 
 <template>
-  <IconButton :color="isActive ? 'primary' : 'info'" @click="$emit('click')">
+  <Button
+    size="icon"
+    :variant="isActive ? 'default' : 'secondary'"
+    @click="$emit('click')"
+  >
     {{ page }}
-  </IconButton>
+  </Button>
 </template>

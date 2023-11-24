@@ -31,12 +31,12 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
 
-  if (data.value?.mfaRequired) {
-    return await navigateTo("/mfa");
-  }
-
   if (data.value?.hasMfa) {
     return await navigateTo("/mfa/verify");
+  }
+
+  if (data.value?.mfaRequired) {
+    return await navigateTo("/mfa");
   }
 
   return await navigateTo("/");
@@ -48,14 +48,31 @@ const onSubmit = handleSubmit(async (values) => {
     <p v-if="generalError">{{ generalError }}</p>
     <div class="space-y-4 p-4 lg:p-8 xl:w-128">
       <h4 class="text-2xl font-bold">Log in</h4>
-      <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
-        <FormElement name="email">
-          <Input label="Email" type="email" name="email" />
-        </FormElement>
+      <form
+        class="flex flex-col space-y-4 items-stretch"
+        novalidate
+        @submit="onSubmit"
+      >
+        <Field v-slot="{ componentField }" name="email">
+          <FormItem>
+            <FormLabel>E-mail</FormLabel>
+            <FormControl>
+              <Input type="email" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </Field>
 
-        <FormElement name="password">
-          <Input label="Password" type="password" name="password" />
-        </FormElement>
+        <Field v-slot="{ componentField }" name="password">
+          <FormItem>
+            <FormLabel>Password</FormLabel>
+            <FormControl>
+              <Input type="password" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </Field>
+
         <Button :disabled="isSubmitting" type="submit">Submit</Button>
       </form>
       <p>

@@ -1,11 +1,10 @@
 <script lang="ts" setup>
-import { PopoverPortal, PopoverTrigger } from "radix-vue";
 import { ROLE } from "~/drizzle/schema";
 import {
-  SelectSchoolType,
-  SelectSchoolUserType,
-  SelectUserSessionType,
-  SelectUserType,
+  type SelectSchoolType,
+  type SelectSchoolUserType,
+  type SelectUserSessionType,
+  type SelectUserType,
 } from "~/drizzle/types";
 
 const { $api, $routes } = useNuxtApp();
@@ -42,60 +41,65 @@ const navItems = [
 ];
 </script>
 <template>
-  <PopoverRoot>
+  <DropdownMenu>
     <div class="absolute right-12 bottom-12">
-      <PopoverTrigger
+      <DropdownMenuTrigger
         class="cursor-pointer flex justify-center items-center bg-white w-16 h-16 p-4 rounded-full shadow"
       >
         <div class="w-full h-full i-heroicons-user-20-solid" />
-      </PopoverTrigger>
-      <PopoverPortal>
-        <PopoverContent as-child>
-          <ul class="bg-white rounded-lg shadow py-2">
-            <li>
-              <span
-                class="flex items-center justify-between menu-link font-medium hover:bg-transparent"
-              >
-                {{ `${user.firstName} ${user.lastName}` }}
-                <div
-                  class="cursor-pointer w-6 h-6 shrink-0 i-heroicons-power"
-                  @click="logout"
-                />
-              </span>
-            </li>
-            <hr class="hr" />
-            <li class="menu-header">Profile</li>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        avoid-collisions
+        class="bg-white rounded-lg shadow py-2"
+      >
+        <div class="flex items-center justify-between font-medium">
+          {{ `${user.firstName} ${user.lastName}` }}
+          <div
+            class="cursor-pointer w-6 h-6 shrink-0 i-heroicons-power"
+            @click="logout"
+          />
+        </div>
 
-            <li v-for="item in navItems" :key="item.path">
-              <NuxtLink
-                :to="item.path"
-                class="menu-link"
-                :class="{ 'font-bold': route.path === item.path }"
-              >
-                {{ item.name }}
-              </NuxtLink>
-            </li>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>Profile</DropdownMenuLabel>
 
-            <template v-if="schools && schools.length">
-              <hr class="hr" />
-              <li class="menu-header">Schools</li>
+        <DropdownMenuItem
+          v-for="item in navItems"
+          :key="item.path"
+          as-child
+          class="cursor-pointer"
+        >
+          <NuxtLink
+            :to="item.path"
+            :class="{ 'font-bold': route.path === item.path }"
+          >
+            {{ item.name }}
+          </NuxtLink>
+        </DropdownMenuItem>
 
-              <li v-for="item in schools" :key="item.schoolId">
-                <NuxtLink
-                  :to="$routes.users.index({ schoolId: item.schoolId })"
-                  class="menu-link"
-                  :class="{
-                    'font-bold': route.path === `/schools/${item.schoolId}`,
-                  }"
-                >
-                  {{ item.school.name }}
-                </NuxtLink>
-              </li>
-            </template>
-          </ul>
-          <PopoverArrow class="fill-white" />
-        </PopoverContent>
-      </PopoverPortal>
+        <template v-if="schools && schools.length">
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Schools</DropdownMenuLabel>
+
+          <DropdownMenuItem
+            v-for="item in schools"
+            :key="item.schoolId"
+            as-child
+            class="cursor-pointer"
+          >
+            <NuxtLink
+              :to="$routes.users.index({ schoolId: item.schoolId })"
+              :class="{
+                'font-bold': route.path === `/schools/${item.schoolId}`,
+              }"
+            >
+              {{ item.school.name }}
+            </NuxtLink>
+          </DropdownMenuItem>
+        </template>
+
+        <RdxDropdownMenuArrow class="fill-white" />
+      </DropdownMenuContent>
     </div>
-  </PopoverRoot>
+  </DropdownMenu>
 </template>

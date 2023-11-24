@@ -6,7 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <IconButton :disabled="disabled">
+  <Button size="icon" :disabled="disabled">
     <div
       :class="{
         'i-heroicons-arrow-left': orientation === 'left',
@@ -14,5 +14,5 @@ defineProps<{
       }"
       class="w-4 h-4 cursor-pointer"
     />
-  </IconButton>
+  </Button>
 </template>

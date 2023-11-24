@@ -1,18 +1,19 @@
 <script lang="ts" setup>
 withDefaults(
   defineProps<{
-    rowspan?: number;
     colspan?: number;
   }>(),
   {
-    rowspan: 1,
     colspan: 1,
   }
 );
 </script>
 
 <template>
-  <td class="px-4 py-2 border-r border-gray-6" v-bind="{ colspan, rowspan }">
+  <th
+    :class="cn('text-gray9 font-bold px-4 py-2 text-left', $attrs.class ?? '')"
+    :colspan="colspan"
+  >
     <slot />
-  </td>
+  </th>
 </template>
