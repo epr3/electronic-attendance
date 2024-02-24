@@ -1,6 +1,5 @@
-import { and, eq } from "drizzle-orm";
 import { nativeEnum, object, string } from "zod";
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
@@ -20,26 +19,28 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    await db.transaction(async (tx) => {
+    await db.transaction().execute(async (tx) => {
       await tx
-        .update(schema.users)
+        .updateTable("users")
         .set({
           firstName: input.firstName,
           lastName: input.lastName,
           email: input.email,
           telephone: input.telephone,
         })
-        .where(eq(schema.users.id, userId));
+        .where("users.id", "=", userId)
+        .executeTakeFirst();
 
       await tx
-        .update(schema.schoolUsers)
+        .updateTable("schoolsUsers")
         .set({ role: input.role })
-        .where(
-          and(
-            eq(schema.schoolUsers.userId, userId),
-            eq(schema.schoolUsers.schoolId, id)
-          )
-        );
+        .where(({ and, eb }) =>
+          and([
+            eb("schoolsUsers.userId", "=", userId),
+            eb("schoolsUsers.schoolId", "=", id),
+          ])
+        )
+        .executeTakeFirst();
     });
   } catch (e) {
     return createError({

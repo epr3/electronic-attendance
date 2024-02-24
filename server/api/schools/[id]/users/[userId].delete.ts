@@ -1,5 +1,4 @@
-import { and, eq } from "drizzle-orm";
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
@@ -9,13 +8,14 @@ export default defineEventHandler(async (event) => {
 
   try {
     await db
-      .delete(schema.schoolUsers)
-      .where(
-        and(
-          eq(schema.schoolUsers.userId, userId),
-          eq(schema.schoolUsers.schoolId, id)
-        )
-      );
+      .deleteFrom("schoolsUsers")
+      .where(({ and, eb }) =>
+        and([
+          eb("schoolsUsers.userId", "=", userId),
+          eb("schoolsUsers.schoolId", "=", id),
+        ])
+      )
+      .execute();
     return sendNoContent(event, 204);
   } catch (e) {
     return createError({

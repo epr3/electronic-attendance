@@ -1,7 +1,8 @@
 <template>
-  <ModalContext>
-    <NuxtLayout class="font-sans">
-      <NuxtPage />
-    </NuxtLayout>
-  </ModalContext>
+  <NuxtLayout class="font-sans">
+    <NuxtPage />
+    <ClientOnly>
+      <Toaster />
+    </ClientOnly>
+  </NuxtLayout>
 </template>

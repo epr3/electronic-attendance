@@ -1,10 +1,8 @@
 import DataTableDropdown from "~/components/organisms/DataTable/DataTableDropdown.vue";
 import { type ColumnDef } from "@tanstack/vue-table";
-import { ROLE } from "~/drizzle/schema";
-import { type SelectSubjectType, type SelectUserType } from "~/drizzle/types";
+import type { ROLE, Subject, User } from "~/database/schema";
 
 export const useColumnDefs = () => {
-  const { $api, $routes } = useNuxtApp();
   const route = useRoute();
 
   const schoolYearColumns: ColumnDef<{
@@ -30,10 +28,10 @@ export const useColumnDefs = () => {
           "div",
           { class: "relative" },
           h(DataTableDropdown, {
-            apiUrl: $api.years.id(id)({
+            apiUrl: api.years.id(id)({
               schoolId: route.params.id as string,
             }),
-            editUrl: $routes.years.get(id)({
+            editUrl: routes.years.get(id)({
               schoolId: route.params.id as string,
             }),
           })
@@ -42,7 +40,7 @@ export const useColumnDefs = () => {
     },
   ];
 
-  const subjectColumns: ColumnDef<SelectSubjectType>[] = [
+  const subjectColumns: ColumnDef<Subject>[] = [
     {
       accessorKey: "name",
       header: "Name",
@@ -57,10 +55,10 @@ export const useColumnDefs = () => {
           "div",
           { class: "relative" },
           h(DataTableDropdown, {
-            apiUrl: $api.subjects.id(id)({
+            apiUrl: api.subjects.id(id)({
               schoolId: route.params.id as string,
             }),
-            editUrl: $routes.subjects.get(id)({
+            editUrl: routes.subjects.get(id)({
               schoolId: route.params.id as string,
             }),
           })
@@ -69,7 +67,7 @@ export const useColumnDefs = () => {
     },
   ];
   const userColumns: ColumnDef<
-    Omit<SelectUserType, "createdAt" | "updatedAt" | "mfaEnabled"> & {
+    Omit<User, "createdAt" | "updatedAt" | "mfaEnabled"> & {
       role: ROLE;
     }
   >[] = [
@@ -107,8 +105,8 @@ export const useColumnDefs = () => {
           "div",
           { class: "relative" },
           h(DataTableDropdown, {
-            apiUrl: $api.users.id(id)({ schoolId: route.params.id as string }),
-            editUrl: $routes.users.get(id)({
+            apiUrl: api.users.id(id)({ schoolId: route.params.id as string }),
+            editUrl: routes.users.get(id)({
               schoolId: route.params.id as string,
             }),
           })

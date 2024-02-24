@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { decodeHex } from "oslo/encoding";
 import { object, string, boolean } from "zod";
+import { createId } from "@paralleldrive/cuid2";
 
 export default defineEventHandler(async (event) => {
   const input = await useValidatedBody(
@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     object({
       secret: string(),
       token: string(),
-      smsOnly: boolean(),
+      emailOnly: boolean(),
     })
   );
 
@@ -29,26 +29,29 @@ export default defineEventHandler(async (event) => {
 
     const user = await useServerUser(event);
 
-    await db.transaction(async (tx) => {
+    await db.transaction().execute(async (tx) => {
       await tx
-        .delete(schema.userMfas)
-        .where(eq(schema.userMfas.userId, user.id));
-
-      await tx.insert(schema.userMfas).values({
-        secret: input.secret,
-        userId: user.id,
-        smsOnly: input.smsOnly,
-      });
+        .deleteFrom("userMfas")
+        .where("userMfas.userId", "=", user.id)
+        .executeTakeFirst();
 
       await tx
-        .update(schema.userSessions)
+        .insertInto("userMfas")
+        .values({
+          id: createId(),
+          secret: input.secret,
+          userId: user.id,
+          emailOnly: input.emailOnly,
+        })
+        .executeTakeFirst();
+
+      await tx
+        .updateTable("userSessions")
         .set({ mfaVerified: true })
-        .where(
-          and(
-            eq(schema.userSessions.userId, user.id),
-            eq(schema.userSessions.id, user.session.id)
-          )
-        );
+        .where(({ and, eb }) =>
+          and([eb("userId", "=", user.id), eb("id", "=", user.session.id)])
+        )
+        .executeTakeFirst();
     });
 
     return sendNoContent(event, 204);

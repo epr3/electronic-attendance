@@ -1,10 +1,9 @@
 <script lang="ts" setup>
-import { object, string } from "zod";
-
-const { $routes, $api } = useNuxtApp();
+const user = useUser();
+import { object, array, string } from "zod";
 
 const { data } = await useFetch<{ qrCode: string; secret: string }>(
-  $api.auth.mfaGenerateQr
+  api.auth.mfaGenerateQr
 );
 
 const qrCode = computed(() => data.value?.qrCode || "");
@@ -13,29 +12,40 @@ const secret = computed(() => data.value?.secret || "");
 const { handleSubmit, isSubmitting, errors } = useForm({
   validationSchema: toTypedSchema(
     object({
-      token: string(),
+      token: array(string()),
     })
   ),
 });
 
-async function smsEnroll() {
-  await useFetch($api.auth.mfaEnroll, {
+async function emailEnroll() {
+  await useFetch(api.auth.mfaEnroll, {
     method: "POST",
-    body: { secret: secret.value, smsOnly: true },
+    body: { secret: secret.value, emailOnly: false },
   });
 
-  return await navigateTo($routes.auth.mfaVerify);
+  return await navigateTo(routes.auth.mfaVerify);
 }
 
 const onSubmit = handleSubmit(async (values) => {
   await useAsyncData("verify", () =>
-    $fetch($api.auth.mfaEnroll, {
+    $fetch(api.auth.mfaEnroll, {
       method: "POST",
-      body: { secret: secret.value, smsOnly: false, token: values.token },
+      body: {
+        secret: secret.value,
+        emailOnly: false,
+        token: values.token.join(""),
+      },
     })
   );
 
-  return await navigateTo($routes.home);
+  user.value = {
+    ...user.value!,
+    mfaEnabled: true,
+    session: { ...user.value!.session, mfaVerified: true },
+  };
+
+  await navigateTo(routes.home, { replace: true });
+  return;
 });
 </script>
 
@@ -52,11 +62,23 @@ const onSubmit = handleSubmit(async (values) => {
           class="flex flex-col space-y-4 items-stretch"
           @submit="onSubmit"
         >
-          <Field v-slot="{ componentField }" name="token">
+          <Field v-slot="{ value, handleChange }" name="token">
             <FormItem>
-              <FormLabel>Token</FormLabel>
+              <FormLabel>Token {{ value ? value.join("") : "" }}</FormLabel>
               <FormControl>
-                <Input v-bind="componentField" />
+                <RdxPinInputRoot
+                  :default-value="value"
+                  placeholder="○"
+                  class="flex gap-2 items-center mt-1"
+                  @complete="handleChange"
+                >
+                  <RdxPinInputInput
+                    v-for="(id, index) in 6"
+                    :key="id"
+                    :index="index"
+                    class="w-10 h-10 bg-white rounded text-center shadow-lg text-gray9 placeholder:text-gray5 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-white"
+                  />
+                </RdxPinInputRoot>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -65,7 +87,7 @@ const onSubmit = handleSubmit(async (values) => {
             Enroll MFA
           </Button>
         </form>
-        <Button @click="smsEnroll">Enroll only using SMS</Button>
+        <Button @click="emailEnroll">Enroll only using E-mail</Button>
       </div>
     </div>
   </Card>

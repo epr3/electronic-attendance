@@ -1,13 +1,10 @@
-<script lang="ts" setup>
+<!-- <script lang="ts" setup>
 import { RRule, datetime, rrulestr } from "rrule";
 import { array, string, object } from "zod";
-import {
-  type SelectSchoolYearHolidaysType,
-  type SelectSchoolYearType,
-} from "~/drizzle/types";
+
 
 const route = useRoute();
-const { $dayjs, $api, $routes } = useNuxtApp();
+const { $dayjs, api, routes } = useNuxtApp();
 const steps = ["Select dates", "Select holidays", "Verify dates"];
 
 const year = ref<
@@ -23,7 +20,7 @@ if (route.params.yearId) {
       holidays: SelectSchoolYearHolidaysType[];
     }
   >(
-    $api.years.id(route.params.yearId as string)({
+    api.years.id(route.params.yearId as string)({
       schoolId: route.params.id as string,
     }),
     {}
@@ -146,10 +143,10 @@ async function onSubmit(values: Record<string, any>) {
   );
 
   const apiRoute = route.params.userId
-    ? $api.years.id(route.params.yearId as string)({
+    ? api.years.id(route.params.yearId as string)({
         schoolId: route.params.id as string,
       })
-    : $api.years.index({
+    : api.years.index({
         schoolId: route.params.id as string,
       });
 
@@ -168,9 +165,7 @@ async function onSubmit(values: Record<string, any>) {
     return;
   }
 
-  await navigateTo(
-    $routes.years.index({ schoolId: route.params.id as string })
-  );
+  await navigateTo(routes.years.index({ schoolId: route.params.id as string }));
 }
 </script>
 
@@ -195,4 +190,6 @@ async function onSubmit(values: Record<string, any>) {
       {{ values }}
     </FormStep>
   </FormWizard>
-</template>
+</template> -->
+
+<template><p>YearForm</p></template>

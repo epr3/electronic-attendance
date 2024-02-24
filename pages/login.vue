@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
 
-const { $routes, $api } = useNuxtApp();
-
 const generalError = ref("");
 
 const { handleSubmit, isSubmitting } = useForm({
@@ -15,31 +13,20 @@ const { handleSubmit, isSubmitting } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  const { data, error } = await useFetch<
+  const { error } = await useFetch<{ schoolId: string }, { message: string }>(
+    api.auth.login,
     {
-      hasMfa: boolean;
-      mfaRequired: boolean;
-    },
-    { message: string }
-  >($api.auth.login, {
-    method: "POST",
-    body: { email: values.email, password: values.password },
-  });
+      method: "POST",
+      body: { email: values.email, password: values.password },
+    }
+  );
 
   if (error.value) {
     generalError.value = error.value?.message ?? "";
     return;
   }
 
-  if (data.value?.hasMfa) {
-    return await navigateTo("/mfa/verify");
-  }
-
-  if (data.value?.mfaRequired) {
-    return await navigateTo("/mfa");
-  }
-
-  return await navigateTo("/");
+  await navigateTo(routes.home, { replace: true });
 });
 </script>
 
@@ -77,7 +64,7 @@ const onSubmit = handleSubmit(async (values) => {
       </form>
       <p>
         Don't have an account? Create one
-        <StyledLink :to="$routes.auth.register">here</StyledLink>!
+        <StyledLink :to="routes.auth.register">here</StyledLink>!
       </p>
     </div>
   </Card>

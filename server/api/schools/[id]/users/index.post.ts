@@ -1,7 +1,7 @@
-import { generateRandomString, alphabet } from "oslo/random";
+import { createId } from "@paralleldrive/cuid2";
+import { generateRandomString, alphabet } from "oslo/crypto";
 import { nativeEnum, object, string } from "zod";
-
-import { ROLE, TOKEN_TYPE } from "~/drizzle/schema";
+import { ROLE, TOKEN_TYPE } from "~/database/schema";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
@@ -20,10 +20,11 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const user = await db.transaction(async (tx) => {
+    const user = await db.transaction().execute(async (tx) => {
       const user = await tx
-        .insert(schema.users)
+        .insertInto("users")
         .values({
+          id: createId(),
           firstName: input.firstName,
           lastName: input.lastName,
           email: input.email,
@@ -31,26 +32,32 @@ export default defineEventHandler(async (event) => {
           createdAt: dayjs().utc().toDate(),
           updatedAt: dayjs().utc().toDate(),
         })
-        .returning()
-        .onConflictDoNothing();
-      if (dayjs(Number(user[0].createdAt)).isSame(Number(user[0].updatedAt))) {
-        await tx.insert(schema.tokens).values({
-          email: input.email,
-          tokenType: TOKEN_TYPE.RESET_PASSWORD,
-          createdAt: dayjs().utc().toDate(),
-          token: generateRandomString(63, alphabet("a-z", "0-9")),
-        });
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      if (dayjs(Number(user.createdAt)).isSame(Number(user.updatedAt))) {
+        await tx
+          .insertInto("tokens")
+          .values({
+            id: createId(),
+            email: input.email,
+            token: generateRandomString(63, alphabet("a-z", "0-9")),
+            type: TOKEN_TYPE.RESET_PASSWORD,
+            expiresAt: dayjs().utc().add(1, "day").toDate(),
+          })
+          .executeTakeFirst();
       }
 
       const schoolUser = await tx
-        .insert(schema.schoolsUsers)
+        .insertInto("schoolsUsers")
         .values({
+          id: createId(),
           schoolId: id,
-          userId: user[0].id,
+          userId: user.id,
           role: input.role,
         })
-        .returning();
-      return { ...user[0], role: schoolUser[0].role };
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      return { ...user, role: schoolUser.role };
     });
     event.node.res.statusCode = 201;
     return user;

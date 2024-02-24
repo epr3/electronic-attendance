@@ -1,4 +1,4 @@
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
@@ -7,10 +7,13 @@ export default defineEventHandler(async (event) => {
   await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const subject = await db.query.subjects.findFirst({
-      where: (subjects, { eq, and }) =>
-        and(eq(subjects.id, subjectId), eq(subjects.schoolId, id)),
-    });
+    const subject = await db
+      .selectFrom("subjects")
+      .selectAll()
+      .where(({ eb, and }) =>
+        and([eb("id", "=", subjectId), eb("schoolId", "=", id)])
+      )
+      .executeTakeFirst();
 
     return subject;
   } catch (e) {

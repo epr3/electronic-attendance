@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
 
-const { $routes, $api } = useNuxtApp();
-
 const generalError = ref("");
 
 const { handleSubmit, isSubmitting } = useForm({
@@ -14,24 +12,16 @@ const { handleSubmit, isSubmitting } = useForm({
       lastName: string().min(1),
       telephone: string().min(1),
       schoolName: string().min(1),
-      schoolAcronym: string().min(1),
     })
   ),
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  const {
-    email,
-    password,
-    firstName,
-    lastName,
-    telephone,
-    schoolAcronym,
-    schoolName,
-  } = values;
+  const { email, password, firstName, lastName, telephone, schoolName } =
+    values;
 
   const { error } = await useFetch<null, { message: string }>(
-    $api.auth.register,
+    api.auth.register,
     {
       method: "POST",
       body: {
@@ -40,7 +30,6 @@ const onSubmit = handleSubmit(async (values) => {
         firstName,
         lastName,
         telephone,
-        schoolAcronym,
         schoolName,
       },
     }
@@ -51,7 +40,7 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
 
-  return await navigateTo(`${$routes.auth.registerSuccess}?email=${email}`);
+  await navigateTo(routes.auth.registerSuccess);
 });
 </script>
 
@@ -62,37 +51,70 @@ const onSubmit = handleSubmit(async (values) => {
       <h4 class="text-2xl font-bold">Enroll Now</h4>
       <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
         <div class="flex space-x-4">
-          <FormElement name="firstName">
-            <Input label="First Name" name="firstName" />
-          </FormElement>
-
-          <FormElement name="lastName">
-            <Input label="Last Name" name="lastName" />
-          </FormElement>
+          <Field v-slot="{ componentField }" name="firstName">
+            <FormItem>
+              <FormLabel>First Name</FormLabel>
+              <FormControl>
+                <Input v-bind="componentField" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </Field>
+          <Field v-slot="{ componentField }" name="lastName">
+            <FormItem>
+              <FormLabel>Last Name</FormLabel>
+              <FormControl>
+                <Input v-bind="componentField" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </Field>
         </div>
-        <FormElement name="email">
-          <Input label="Email" type="email" name="email" />
-        </FormElement>
+        <Field v-slot="{ componentField }" name="email">
+          <FormItem>
+            <FormLabel>E-mail</FormLabel>
+            <FormControl>
+              <Input type="email" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </Field>
 
-        <FormElement name="telephone">
-          <Input label="Telephone" type="telephone" name="telephone" />
-        </FormElement>
+        <Field v-slot="{ componentField }" name="telephone">
+          <FormItem>
+            <FormLabel>Telephone</FormLabel>
+            <FormControl>
+              <Input type="tel" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </Field>
 
-        <FormElement name="password">
-          <Input label="Password" type="password" name="password" />
-        </FormElement>
-        <FormElement name="schoolName">
-          <Input label="School Name" name="schoolName" />
-        </FormElement>
+        <Field v-slot="{ componentField }" name="password">
+          <FormItem>
+            <FormLabel>Password</FormLabel>
+            <FormControl>
+              <Input type="password" v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </Field>
 
-        <FormElement name="schoolAcronym">
-          <Input label="School Acronym" name="schoolAcronym" />
-        </FormElement>
+        <Field v-slot="{ componentField }" name="schoolName">
+          <FormItem>
+            <FormLabel>School Name</FormLabel>
+            <FormControl>
+              <Input v-bind="componentField" />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        </Field>
+
         <Button :disabled="isSubmitting" type="submit">Submit</Button>
       </form>
       <p>
         Already have an account? Log in
-        <StyledLink :to="$routes.auth.login">here</StyledLink>!
+        <StyledLink :to="routes.auth.login">here</StyledLink>!
       </p>
     </div>
   </Card>

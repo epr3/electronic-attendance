@@ -1,31 +1,33 @@
 <script lang="ts" setup>
-import { ROLE } from "~/drizzle/schema";
+const route = useRoute();
 
-const user = useUser();
-
-if (!user.value) {
-  await navigateTo("/login");
-}
-
-if (
-  user.value &&
-  !user.value.mfaEnabled &&
-  user.value.roles.some((item) =>
-    [ROLE.ADMIN, ROLE.DIRECTOR, ROLE.TEACHER].includes(item)
-  )
-) {
-  await navigateTo("/mfa");
-}
-
-if (user.value && !user.value.session.mfaVerified) {
-  await navigateTo("/mfa/verify");
-}
+const navItems = [
+  {
+    icon: "i-heroicons-rectangle-group-solid",
+    path: routes.school.get(route.params.id as string),
+    name: "Dashboard",
+  },
+  {
+    icon: "i-heroicons-user-group-solid",
+    path: routes.users.index({
+      schoolId: route.params.id as string,
+    }),
+    name: "Users",
+  },
+  {
+    icon: "i-heroicons-user-solid",
+    path: routes.profile,
+    name: "Profile",
+  },
+];
 </script>
 
 <template>
-  <div class="px-lg py-xl bg-brand-shade-dark min-h-screen">
-    {{ user }}
-    <ProfileMenu v-if="user" :user="user" />
-    <slot />
+  <div class="bg-brand-shade-light min-h-screen flex flex-col">
+    <TopBar />
+    <div class="container mx-auto py-12">
+      <slot />
+    </div>
+    <BottomMenu v-if="navItems.length" :nav-items="navItems" />
   </div>
 </template>

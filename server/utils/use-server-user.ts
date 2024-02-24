@@ -1,86 +1,70 @@
-import { eq } from "drizzle-orm";
 import type { H3Event } from "h3";
+import { jsonArrayFrom } from "kysely/helpers/postgres";
 
-export async function useServerUser(event: H3Event) {
-  const cookie = getCookie(event, sessionCookieController.cookieName);
+export async function getServerUser(event: H3Event) {
+  const cookie = getCookie(event, COOKIE_NAME);
 
   if (!cookie) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "UNAUTHORIZED",
-      message: "Not logged in.",
-    });
+    return null;
   }
 
-  const session = await db.query.userSessions.findFirst({
-    where: (sessionObj, { eq }) => eq(sessionObj.id, cookie),
-  });
+  const session = await db
+    .selectFrom("userSessions")
+    .selectAll()
+    .where("userSessions.id", "=", cookie)
+    .executeTakeFirst();
 
   if (!session) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "UNAUTHORIZED",
-      message: "Not logged in.",
-    });
+    return null;
   }
 
-  const sessionState = sessionController.getSessionState(session.expiresAt);
+  const isSessionExpired = dayjs().isAfter(dayjs(session.expiresAt));
 
-  if (sessionState === "expired") {
+  if (isSessionExpired) {
     await db
-      .delete(schema.userSessions)
-      .where(eq(schema.userSessions.id, cookie));
-    const blankCookie = sessionCookieController.createBlankSessionCookie();
-    setCookie(event, sessionCookieController.cookieName, blankCookie.value, {
-      ...blankCookie.attributes,
-    });
+      .deleteFrom("userSessions")
+      .where("userSessions.id", "=", cookie)
+      .executeTakeFirst();
+
+    setCookie(event, COOKIE_NAME, "", { ...COOKIE_ATTRIBUTES, maxAge: -1 });
+    return null;
+  }
+  const user = await db
+    .selectFrom("users")
+    .select((eb) => [
+      "id",
+      "firstName",
+      "lastName",
+      "email",
+      "telephone",
+      "mfaEnabled",
+      jsonArrayFrom(
+        eb
+          .selectFrom("schoolsUsers")
+          .selectAll()
+          .whereRef("schoolsUsers.userId", "=", "users.id")
+      ).as("schools"),
+    ])
+    .where("users.id", "=", session.userId)
+    .executeTakeFirst();
+
+  if (!user) {
+    return null;
+  }
+
+  return { ...user, session };
+}
+
+export async function useServerUser(event: H3Event) {
+  const user = await getServerUser(event);
+
+  if (!user) {
     throw createError({
       statusCode: 401,
       statusMessage: "UNAUTHORIZED",
       message: "Not logged in.",
     });
-  } else if (sessionState === "idle") {
-    const session = await db
-      .update(schema.userSessions)
-      .set({
-        expiresAt: dayjs(sessionController.createExpirationDate())
-          .utc()
-          .toDate(),
-      })
-      .where(eq(schema.userSessions.id, cookie))
-      .returning();
-
-    const updatedCookie = sessionCookieController.createSessionCookie(cookie);
-    setCookie(event, sessionCookieController.cookieName, updatedCookie.value, {
-      ...updatedCookie.attributes,
-    });
-
-    const user = await db.query.users.findFirst({
-      where: (userObj, { eq }) => eq(userObj.id, session[0].userId),
-    });
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: "UNAUTHORIZED",
-        message: "Not logged in.",
-      });
-    }
-
-    return { ...user, session: session[0] };
-  } else {
-    const user = await db.query.users.findFirst({
-      where: (userObj, { eq }) => eq(userObj.id, session.userId),
-    });
-
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: "UNAUTHORIZED",
-        message: "Not logged in.",
-      });
-    }
-
-    return { ...user, session };
   }
+
+  return user;
 }

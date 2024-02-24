@@ -1,17 +1,29 @@
 import type { H3Event } from "h3";
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
 
 export async function useUserRoleSchool(
   event: H3Event,
   schoolId: string,
-  roles: ROLE[] = [ROLE.ADMIN, ROLE.DIRECTOR, ROLE.TEACHER]
+  roles: ROLE[] = [
+    ROLE.ADMIN,
+    ROLE.DIRECTOR,
+    ROLE.TEACHER,
+    ROLE.STUDENT,
+    ROLE.PARENT,
+  ]
 ) {
   const user = await useServerUser(event);
 
-  const schoolUser = await db.query.schoolsUsers.findFirst({
-    where: (schoolUser, { eq, and }) =>
-      and(eq(schoolUser.schoolId, schoolId), eq(schoolUser.userId, user!.id)),
-  });
+  const schoolUser = await db
+    .selectFrom("schoolsUsers")
+    .selectAll()
+    .where(({ and, eb }) =>
+      and([
+        eb("schoolsUsers.userId", "=", user.id),
+        eb("schoolsUsers.schoolId", "=", schoolId),
+      ])
+    )
+    .executeTakeFirst();
 
   if (!schoolUser || !roles.includes(schoolUser.role)) {
     throw createError({

@@ -1,6 +1,4 @@
-import { sql, eq } from "drizzle-orm";
-
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
@@ -13,17 +11,20 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [subjects, result] = await Promise.all([
-      db.query.subjects.findMany({
-        where: (subjects, { eq }) => eq(subjects.schoolId, id),
-        limit: pageSize,
-        offset: page * pageSize,
-      }),
       db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(schema.subjects)
-        .where(eq(schema.subjects.schoolId, id)),
+        .selectFrom("subjects")
+        .selectAll()
+        .where("subjects.schoolId", "=", id)
+        .limit(pageSize)
+        .offset(page * pageSize)
+        .execute(),
+      db
+        .selectFrom("subjects")
+        .select(({ fn }) => fn.count<number>("subjects.id").as("count"))
+        .where("subjects.schoolId", "=", id)
+        .executeTakeFirst(),
     ]);
-    return { subjects, count: result[0].count };
+    return { subjects, count: result?.count ?? 0 };
   } catch (e) {
     console.error(e);
     return createError({

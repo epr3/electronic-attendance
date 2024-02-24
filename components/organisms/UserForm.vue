@@ -1,16 +1,16 @@
 <script lang="ts" setup>
-import { object, string, nativeEnum } from "zod";
-import { ROLE } from "~/drizzle/schema";
-import { type SelectUserType } from "~/drizzle/types";
+import { object, string } from "zod";
+import { type User, ROLE } from "~/database/schema";
+
+const props = defineProps<{ role: ROLE }>();
 
 const route = useRoute();
-const { $routes, $api } = useNuxtApp();
 
-const user = ref<(SelectUserType & { role: ROLE }) | null>(null);
+const user = ref<(User & { role: ROLE }) | null>(null);
 
 if (route.params.userId) {
-  const { data } = await useFetch<SelectUserType & { role: ROLE }>(
-    $routes.users.get(route.params.userId as string)({
+  const { data } = await useFetch<User & { role: ROLE }>(
+    routes.users.get(route.params.userId as string)({
       schoolId: route.params.id as string,
     })
   );
@@ -27,35 +27,32 @@ const { handleSubmit, isSubmitting } = useForm({
       firstName: string().min(1),
       lastName: string().min(1),
       email: string().email(),
-      role: nativeEnum(ROLE),
       telephone: string().min(1),
     })
   ),
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  const { email, firstName, lastName, telephone, role } = values;
+  const { email, firstName, lastName, telephone } = values;
 
   const apiRoute = route.params.userId
-    ? $api.users.id(route.params.userId as string)({
+    ? api.users.id(route.params.userId as string)({
         schoolId: route.params.id as string,
       })
-    : $api.users.index({ schoolId: route.params.id as string });
+    : api.users.index({ schoolId: route.params.id as string });
 
   const method = route.params.userId ? "PUT" : "POST";
 
   const { error } = await useFetch(apiRoute, {
     method,
-    body: { email, firstName, lastName, telephone, role },
+    body: { email, firstName, lastName, telephone, role: props.role },
   });
 
   if (error.value) {
     generalError.value = error.value?.message ?? "";
     return;
   }
-  await navigateTo(
-    $routes.users.index({ schoolId: route.params.id as string })
-  );
+  await navigateTo(routes.users.index({ schoolId: route.params.id as string }));
 });
 </script>
 
@@ -64,7 +61,7 @@ const onSubmit = handleSubmit(async (values) => {
     <div class="flex space-x-4 items-center">
       <Button size="icon" as-child>
         <NuxtLink
-          :to="$routes.users.index({ schoolId: route.params.id as string })"
+          :to="routes.users.index({ schoolId: route.params.id as string })"
         >
           <div class="i-heroicons-arrow-left" />
         </NuxtLink>
@@ -106,37 +103,8 @@ const onSubmit = handleSubmit(async (values) => {
         <FormItem>
           <FormLabel>Telephone </FormLabel>
           <FormControl>
-            <Input type="telephone" v-bind="componentField" />
+            <Input type="tel" v-bind="componentField" />
           </FormControl>
-          <FormMessage />
-        </FormItem>
-      </Field>
-      <Field v-slot="{ componentField }" name="role">
-        <FormItem>
-          <FormLabel>Role</FormLabel>
-          <Select v-bind="componentField">
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem
-                  v-for="role in Object.values(ROLE).filter(
-                    (item) => item !== ROLE.SUPERADMIN && item !== ROLE.DIRECTOR
-                  )"
-                  :key="role"
-                  :value="role"
-                >
-                  {{
-                    role.slice(0, 1).toUpperCase() + role.slice(1).toLowerCase()
-                  }}
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-
           <FormMessage />
         </FormItem>
       </Field>

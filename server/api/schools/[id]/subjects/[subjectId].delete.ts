@@ -1,5 +1,4 @@
-import { eq } from "drizzle-orm";
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
@@ -9,8 +8,9 @@ export default defineEventHandler(async (event) => {
 
   try {
     await db
-      .delete(schema.subjects)
-      .where(eq(schema.subjects.id, subjectId as string));
+      .deleteFrom("subjects")
+      .where("subjects.id", "=", subjectId as string)
+      .executeTakeFirst();
     return sendNoContent(event, 204);
   } catch (e) {
     return createError({

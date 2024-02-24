@@ -1,7 +1,5 @@
-import { eq } from "drizzle-orm";
-
 export default defineEventHandler(async (event) => {
-  const authCookie = getCookie(event, sessionCookieController.cookieName);
+  const authCookie = getCookie(event, COOKIE_NAME);
 
   if (!authCookie) {
     throw createError({
@@ -13,8 +11,10 @@ export default defineEventHandler(async (event) => {
 
   // check if user is authenticated
   const session = await db
-    .delete(schema.userSessions)
-    .where(eq(schema.userSessions.id, authCookie));
+    .deleteFrom("userSessions")
+    .where("userSessions.id", "=", authCookie)
+    .executeTakeFirst();
+
   if (!session) {
     throw createError({
       statusCode: 401,
@@ -23,9 +23,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const blankCookie = sessionCookieController.createBlankSessionCookie();
-
-  setCookie(event, sessionCookieController.cookieName, blankCookie.serialize());
+  setCookie(event, COOKIE_NAME, "", { ...COOKIE_ATTRIBUTES, maxAge: -1 });
 
   return sendRedirect(event, "/login");
 });

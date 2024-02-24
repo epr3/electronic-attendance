@@ -2,15 +2,15 @@
 import { RRule, datetime, rrulestr } from "rrule";
 
 import { array, string, object } from "zod";
-import { ROLE } from "~/drizzle/schema";
-import type {
-  SelectSubjectTeacherClassType,
-  SelectSubjectType,
-  SelectUserType,
-} from "~/drizzle/types";
+import {
+  ROLE,
+  type Schedule,
+  type Subject,
+  type User,
+} from "~/database/schema";
 
 const route = useRoute();
-const { $dayjs, $routes, $api } = useNuxtApp();
+const { $dayjs, routes, api } = useNuxtApp();
 const steps = ["Select dates & teacher", "Select students", "Verify data"];
 
 const studentsPage = 1;
@@ -23,10 +23,10 @@ const subjectsPageSize = 12;
 const { data } = await useAsyncData("teacherSubjectForm", async () => {
   const [students, teachers, subjectsData] = await Promise.all([
     $fetch<{
-      users: (SelectUserType & {
+      users: (User & {
         role: ROLE;
       })[];
-    }>($routes.users.index({ schoolId: route.params.id as string }), {
+    }>(routes.users.index({ schoolId: route.params.id as string }), {
       query: {
         role: ROLE.STUDENT,
         page: studentsPage,
@@ -35,10 +35,10 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
       },
     }),
     $fetch<{
-      users: (SelectUserType & {
+      users: (User & {
         role: ROLE;
       })[];
-    }>($routes.users.index({ schoolId: route.params.id as string }), {
+    }>(routes.users.index({ schoolId: route.params.id as string }), {
       query: {
         role: ROLE.TEACHER,
         page: teachersPage,
@@ -46,8 +46,8 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
       },
     }),
     $fetch<{
-      subjects: SelectSubjectType[];
-    }>($api.subjects.index({ schoolId: route.params.id as string }), {
+      subjects: Subject[];
+    }>(api.subjects.index({ schoolId: route.params.id as string }), {
       query: { page: subjectsPage, pageSize: subjectsPageSize },
     }),
   ]);
@@ -55,10 +55,8 @@ const { data } = await useAsyncData("teacherSubjectForm", async () => {
   let schedule = null;
 
   if (route.params.subjectId) {
-    schedule = await $fetch<
-      SelectSubjectTeacherClassType & { students: { studentId: string }[] }
-    >(
-      $api.years.classes.schedules.id(route.params.subjectId as string)({
+    schedule = await $fetch<Schedule & { students: { studentId: string }[] }>(
+      api.years.classes.schedules.id(route.params.subjectId as string)({
         schoolId: route.params.id as string,
         yearId: route.params.yearId as string,
         classId: route.params.classId as string,
@@ -148,12 +146,12 @@ async function onSubmit(values: Record<string, any>) {
   });
 
   const apiRoute = route.params.subjectId
-    ? $api.years.classes.schedules.id(route.params.subjectId as string)({
+    ? api.years.classes.schedules.id(route.params.subjectId as string)({
         schoolId: route.params.id as string,
         yearId: route.params.yearId as string,
         classId: route.params.classId as string,
       })
-    : $api.years.classes.schedules.index({
+    : api.years.classes.schedules.index({
         schoolId: route.params.id as string,
         yearId: route.params.yearId as string,
         classId: route.params.classId as string,
@@ -172,7 +170,7 @@ async function onSubmit(values: Record<string, any>) {
   }
 
   return await navigateTo(
-    $routes.years.classes.subjects.index({
+    routes.years.classes.subjects.index({
       schoolId: route.params.id as string,
       yearId: route.params.yearId as string,
       classId: route.params.classId as string,

@@ -1,16 +1,14 @@
 <script lang="ts" setup>
 import { object, string, array } from "zod";
-import { ROLE } from "~/drizzle/schema";
-import type {
-  SelectUserType,
-  SelectClassType,
-  SelectClassStudentType,
-} from "~/drizzle/types";
+import {
+  ROLE,
+  type Class,
+  type ClassStudent,
+  type User,
+} from "~/database/schema";
 
 const route = useRoute();
 const router = useRouter();
-
-const { $api, $routes } = useNuxtApp();
 
 const studentsPage = 1;
 const studentsPageSize = 12;
@@ -18,21 +16,21 @@ const headTeacherPage = 1;
 const headTeacherPageSize = 12;
 
 const classObject = ref<
-  | (SelectClassType & {
-      students: SelectClassStudentType[];
+  | (Class & {
+      students: ClassStudent[];
     })
   | null
 >(null);
 
 const { data } = await useAsyncData<{
-  students: { users: (SelectUserType & { role: ROLE })[] };
-  teachers: { users: (SelectUserType & { role: ROLE })[] };
+  students: { users: (User & { role: ROLE })[] };
+  teachers: { users: (User & { role: ROLE })[] };
 }>(
   "classForm" + route.params.classId ? `-${route.params.classId}` : "",
   async () => {
     const apiObject = route.params.classId
       ? {
-          route: $routes.users.index({
+          route: routes.users.index({
             schoolId: route.params.id as string,
           }),
           query: {
@@ -41,7 +39,7 @@ const { data } = await useAsyncData<{
           },
         }
       : {
-          route: $routes.users.index({
+          route: routes.users.index({
             schoolId: route.params.id as string,
           }),
           query: {
@@ -49,7 +47,7 @@ const { data } = await useAsyncData<{
           },
         };
     const [students, teachers] = await Promise.all([
-      $fetch<{ users: (SelectUserType & { role: ROLE })[] }>(apiObject.route, {
+      $fetch<{ users: (User & { role: ROLE })[] }>(apiObject.route, {
         query: {
           ...apiObject.query,
           page: studentsPage,
@@ -57,7 +55,7 @@ const { data } = await useAsyncData<{
           role: ROLE.STUDENT,
         },
       }),
-      $fetch<{ users: (SelectUserType & { role: ROLE })[] }>(apiObject.route, {
+      $fetch<{ users: (User & { role: ROLE })[] }>(apiObject.route, {
         query: {
           ...apiObject.query,
           page: headTeacherPage,
@@ -73,11 +71,11 @@ const { data } = await useAsyncData<{
 
 if (route.params.classId) {
   const { data } = await useFetch<
-    SelectClassType & {
-      students: SelectClassStudentType[];
+    Class & {
+      students: ClassStudent[];
     }
   >(
-    $api.years.classes.id(route.params.classId as string)({
+    api.years.classes.id(route.params.classId as string)({
       schoolId: route.params.id as string,
       yearId: route.params.yearId as string,
     })
@@ -110,11 +108,11 @@ const { handleSubmit, isSubmitting } = useForm({
 const onSubmit = handleSubmit(async (values) => {
   const { title, headTeacherId, students } = values;
   const apiRoute = route.params.classId
-    ? $api.years.classes.id(route.params.classId as string)({
+    ? api.years.classes.id(route.params.classId as string)({
         schoolId: route.params.id as string,
         yearId: route.params.yearId as string,
       })
-    : $api.years.classes.index({
+    : api.years.classes.index({
         schoolId: route.params.id as string,
         yearId: route.params.yearId as string,
       });
@@ -131,7 +129,7 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
   return await navigateTo(
-    $routes.years.classes.index({
+    routes.years.classes.index({
       schoolId: route.params.id as string,
       yearId: route.params.yearId as string,
     })

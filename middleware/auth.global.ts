@@ -1,24 +1,17 @@
-import { ROLE } from "~/drizzle/schema";
-import type {
-  SelectSchoolType,
-  SelectSchoolUserType,
-  SelectUserSessionType,
-  SelectUserType,
-} from "~/drizzle/types";
+import type { ROLE, SchoolUser, User, UserSession } from "~/database/schema";
 
-export default defineNuxtRouteMiddleware(async (to) => {
-  const { $api } = useNuxtApp();
+export default defineNuxtRouteMiddleware(async () => {
   const user = useUser();
-  if (!user.value && to.meta.layout === "auth") {
+  if (!user.value) {
     const { data, error } = await useFetch<
-      SelectUserType & {
+      User & {
         roles: ROLE[];
-        session: SelectUserSessionType;
-        schools: (SelectSchoolUserType & { school: SelectSchoolType })[];
+        session: UserSession;
+        schools: SchoolUser[];
       }
-    >($api.auth.session);
+    >(api.auth.session);
     if (error.value) {
-      throw createError("Failed to fetch data");
+      return abortNavigation(error.value);
     }
 
     user.value = data.value ?? null;

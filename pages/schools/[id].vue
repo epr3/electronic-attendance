@@ -1,24 +1,23 @@
 <script lang="ts" setup>
 definePageMeta({
   layout: "auth",
+  middleware: ["protected"],
 });
 
 const route = useRoute();
 
-const { $routes } = useNuxtApp();
-
 const tabList = [
   {
     name: "Personnel",
-    href: $routes.users.index({ schoolId: route.params.id as string }),
+    href: routes.users.index({ schoolId: route.params.id as string }),
   },
   {
     name: "Subjects",
-    href: $routes.subjects.index({ schoolId: route.params.id as string }),
+    href: routes.subjects.index({ schoolId: route.params.id as string }),
   },
   {
     name: "Years",
-    href: $routes.years.index({ schoolId: route.params.id as string }),
+    href: routes.years.index({ schoolId: route.params.id as string }),
   },
 ];
 </script>

@@ -1,18 +1,17 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
-import type { SelectClassType } from "~/drizzle/types";
+import type { Class } from "~/database/schema";
 
 const route = useRoute();
 const router = useRouter();
-const { $routes, $api } = useNuxtApp();
 
 const generalError = ref("");
 
 const page = 1;
 const pageSize = 12;
 
-const { data } = await useFetch<{ classes: SelectClassType[] }>(
-  $api.years.classes.index({
+const { data } = await useFetch<{ classes: Class[] }>(
+  api.years.classes.index({
     schoolId: route.params.id as string,
     yearId: route.params.yearId as string,
   }),
@@ -25,7 +24,7 @@ const { data } = await useFetch<{ classes: SelectClassType[] }>(
 );
 
 const { data: student } = await useFetch(
-  $api.users.id(route.params.studentId as string)({
+  api.users.id(route.params.studentId as string)({
     schoolId: route.params.id as string,
   })
 );
@@ -47,7 +46,7 @@ const onSubmit = handleSubmit(async (values) => {
   const { classId } = values;
 
   const { error } = await useFetch(
-    $api.years.classes.students.id(route.params.studentId as string)({
+    api.years.classes.students.id(route.params.studentId as string)({
       schoolId: route.params.id as string,
       yearId: route.params.yearId as string,
       classId,
@@ -63,7 +62,7 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
   await navigateTo(
-    $routes.years.classes.students.index({
+    routes.years.classes.students.index({
       schoolId: route.params.id as string,
       yearId: route.params.yearId as string,
       classId: route.params.classId as string,

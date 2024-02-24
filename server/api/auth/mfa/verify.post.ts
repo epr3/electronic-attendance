@@ -1,6 +1,5 @@
 import { object, string } from "zod";
 import { decodeHex } from "oslo/encoding";
-import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const input = await useValidatedBody(
@@ -12,9 +11,11 @@ export default defineEventHandler(async (event) => {
   try {
     const user = await useServerUser(event);
 
-    const mfa = await db.query.userMfas.findFirst({
-      where: (mfa, { eq }) => eq(mfa.userId, user.id),
-    });
+    const mfa = await db
+      .selectFrom("userMfas")
+      .select(["secret"])
+      .where("userMfas.userId", "=", user.id)
+      .executeTakeFirst();
 
     if (!mfa) {
       return createError({
@@ -38,11 +39,26 @@ export default defineEventHandler(async (event) => {
     }
 
     await db
-      .update(schema.userSessions)
+      .updateTable("userSessions")
       .set({ mfaVerified: true })
-      .where(eq(schema.userSessions.id, user.session.id));
+      .where("userSessions.id", "=", user.session.id)
+      .executeTakeFirst();
 
-    return sendNoContent(event, 204);
+    const school = await db
+      .selectFrom("schoolsUsers")
+      .select(["schoolId"])
+      .where("schoolsUsers.userId", "=", user.id)
+      .executeTakeFirst();
+
+    if (school) {
+      return { schoolId: school.schoolId };
+    }
+
+    return createError({
+      statusCode: 500,
+      statusMessage: "INTERNAL_SERVER_ERROR",
+      message: "An unknown error has occurred",
+    });
   } catch (e) {
     console.error(e);
     return createError({

@@ -1,7 +1,5 @@
-import { generateRandomString, alphabet } from "oslo/random";
+import { generateRandomString, alphabet } from "oslo/crypto";
 import { object, string } from "zod";
-
-import { ROLE } from "~/drizzle/schema";
 
 export default defineEventHandler(async (event) => {
   const input = await useValidatedBody(
@@ -13,9 +11,12 @@ export default defineEventHandler(async (event) => {
   );
 
   try {
-    const key = await db.query.userKeys.findFirst({
-      where: (key, { eq }) => eq(key.id, `email:${input.email}`),
-    });
+    const key = await db
+      .selectFrom("userKeys")
+      .select(["id", "hashedPassword", "userId"])
+      .where("userKeys.id", "=", `email:${input.email}`)
+      .executeTakeFirst();
+
     if (!key || !key.hashedPassword) {
       return createError({
         statusCode: 401,
@@ -32,41 +33,30 @@ export default defineEventHandler(async (event) => {
       });
     }
     const sessionId = generateRandomString(15, alphabet("a-z", "0-9"));
-    const expirationDate = sessionController.createExpirationDate();
 
     await db
-      .insert(schema.userSessions)
+      .insertInto("userSessions")
       .values({
         id: sessionId,
         userId: key.userId,
-        expiresAt: dayjs(expirationDate).utc().toDate(),
+        expiresAt: dayjs().add(30, "d").utc().toDate(),
       })
-      .returning();
+      .executeTakeFirst();
 
-    const user = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.id, key.userId),
-      with: {
-        mfa: true,
-        schools: true,
-      },
-    });
+    const user = await db
+      .selectFrom("users")
+      .select(["firstName", "lastName"])
+      .where("users.id", "=", key.userId)
+      .executeTakeFirst();
 
-    const cookie = sessionCookieController.createSessionCookie(sessionId);
+    const cookie = createCookie(sessionId);
 
-    setCookie(event, sessionCookieController.cookieName, cookie.value, {
+    setCookie(event, COOKIE_NAME, cookie.value, {
       ...cookie.attributes,
     });
 
     if (user) {
-      return {
-        hasMfa: !!user.mfa,
-        mfaRequired: user.schools.some(
-          (item) =>
-            item.role === ROLE.ADMIN ||
-            item.role === ROLE.DIRECTOR ||
-            item.role === ROLE.TEACHER
-        ),
-      };
+      return sendNoContent(event, 204);
     }
 
     return createError({
@@ -75,6 +65,7 @@ export default defineEventHandler(async (event) => {
       message: "Invalid email or password",
     });
   } catch (e) {
+    console.error(e);
     return createError({
       statusCode: 500,
       statusMessage: "INTERNAL_SERVER_ERROR",

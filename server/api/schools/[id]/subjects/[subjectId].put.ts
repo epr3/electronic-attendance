@@ -1,6 +1,5 @@
-import { eq } from "drizzle-orm";
 import { object, string } from "zod";
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
@@ -17,11 +16,11 @@ export default defineEventHandler(async (event) => {
 
   try {
     await db
-      .update(schema.subjects)
+      .updateTable("subjects")
       .set({
         name: input.name,
       })
-      .where(eq(schema.subjects.id, subjectId));
+      .where("subjects.id", "=", subjectId);
     return sendNoContent(event, 204);
   } catch (e) {
     return createError({

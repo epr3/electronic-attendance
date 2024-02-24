@@ -1,5 +1,6 @@
+import { createId } from "@paralleldrive/cuid2";
 import { object, string } from "zod";
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
 
 export default defineEventHandler(async (event) => {
   const id = event.context.params!.id;
@@ -16,12 +17,14 @@ export default defineEventHandler(async (event) => {
   try {
     event.node.res.statusCode = 201;
     const subject = await db
-      .insert(schema.subjects)
+      .insertInto("subjects")
       .values({
+        id: createId(),
         name: input.name,
         schoolId: id,
       })
-      .returning();
+      .returningAll()
+      .executeTakeFirst();
     return subject;
   } catch (e) {
     return createError({

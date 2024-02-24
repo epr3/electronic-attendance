@@ -4,9 +4,11 @@ export default defineEventHandler(async (event) => {
   try {
     const user = await useServerUser(event);
 
-    const mfa = await db.query.userMfas.findFirst({
-      where: (mfa, { eq }) => eq(mfa.userId, user.id),
-    });
+    const mfa = await db
+      .selectFrom("userMfas")
+      .select(["secret", "emailOnly"])
+      .where("userMfas.userId", "=", user.id)
+      .executeTakeFirstOrThrow();
 
     if (!mfa) {
       return createError({
@@ -17,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const token = await totpController.generate(decodeHex(mfa.secret));
-    if (mfa.smsOnly) {
+    if (mfa.emailOnly) {
       // re-enable when have money
       const from = "CatalogID";
       const to = user.telephone.split("+")[1];

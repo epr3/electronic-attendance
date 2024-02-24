@@ -1,16 +1,14 @@
 <script lang="ts" setup>
 import { object, string } from "zod";
-import { type SelectSubjectType } from "~/drizzle/types";
+import type { Subject } from "~/database/schema";
 
 const route = useRoute();
-
-const { $api, $routes } = useNuxtApp();
 
 const subject = ref({});
 
 if (route.params.subjectId) {
-  subject.value = await useFetch<SelectSubjectType>(
-    $api.subjects.id(route.params.subjectId as string)({
+  subject.value = await useFetch<Subject>(
+    api.subjects.id(route.params.subjectId as string)({
       schoolId: route.params.id as string,
     })
   );
@@ -31,10 +29,10 @@ const onSubmit = handleSubmit(async (values) => {
   const { name } = values;
 
   const apiRoute = route.params.subjectId
-    ? $api.subjects.id(route.params.subjectId as string)({
+    ? api.subjects.id(route.params.subjectId as string)({
         schoolId: route.params.id as string,
       })
-    : $api.subjects.index({ schoolId: route.params.id as string });
+    : api.subjects.index({ schoolId: route.params.id as string });
 
   const method = route.params.subjectId ? "PUT" : "POST";
 
@@ -48,7 +46,7 @@ const onSubmit = handleSubmit(async (values) => {
     return;
   }
   await navigateTo(
-    $routes.subjects.index({ schoolId: route.params.id as string })
+    routes.subjects.index({ schoolId: route.params.id as string })
   );
 });
 </script>
@@ -58,7 +56,7 @@ const onSubmit = handleSubmit(async (values) => {
     <div class="flex space-x-4 items-center">
       <Button size="icon" as-child>
         <NuxtLink
-          :to="$routes.subjects.index({ schoolId: route.params.id as string })"
+          :to="routes.subjects.index({ schoolId: route.params.id as string })"
         >
           <div class="i-heroicons-arrow-left" />
         </NuxtLink>

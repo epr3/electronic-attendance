@@ -1,91 +1,147 @@
-import { eq, and, ne, SQL, sql } from "drizzle-orm";
-
-import { ROLE } from "~/drizzle/schema";
+import { ROLE } from "~/database/schema";
+import qs from "qs";
+import { jsonArrayFrom } from "kysely/helpers/postgres";
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
+  const query = getQuery<Record<string, string>>(event);
+  const parsedQuery = qs.parse(query) as Record<
+    string,
+    string & Record<"eq" | "neq", string & number>
+  >;
 
-  const page = parseInt(query.page as string) ?? 0;
-  const pageSize = parseInt(query.pageSize as string) ?? 5;
-  const role = query.role;
-  // const excludeYear = query.excludeYear;
-  // const includeClass = query.includeClass;
+  const page = parseInt(parsedQuery.page as string) ?? 0;
+  const pageSize = parseInt(parsedQuery.pageSize as string) ?? 5;
+  const role = parsedQuery.role;
+  const year = parsedQuery.year;
+  const classId = parsedQuery.classId;
+
   const id = event.context.params!.id;
 
   const user = await useServerUser(event);
-
-  const conditions: (SQL<unknown> | undefined)[] = [
-    eq(schema.schoolsUsers.schoolId, id),
-    ne(schema.users.id, user.id),
-  ];
-
-  if (role) {
-    conditions.push(eq(schema.schoolsUsers.role, role as ROLE));
-    // if (excludeYear) {
-    //   if (role === ROLE.STUDENT) {
-    //     conditions.push(eq(schema.classes.schoolYearId, excludeYear as string));
-    //   } else if (role === ROLE.TEACHER) {
-    //     conditions.push(
-    //       or(
-    //         isNull(schema.classes.headTeacherId),
-    //         ne(schema.classes.schoolYearId, excludeYear as string)
-    //       )
-    //     );
-    //   }
-
-    //   if (includeClass) {
-    //     if (role === ROLE.STUDENT) {
-    //       conditions.push(
-    //         or(
-    //           eq(schema.classesStudents.classId, includeClass as string),
-    //           eq(schema.classes.schoolYearId, excludeYear as string)
-    //         )
-    //       );
-    //     } else if (role === ROLE.TEACHER) {
-    //       conditions.push(
-    //         or(
-    //           eq(schema.classes.id, includeClass as string),
-    //           eq(schema.classes.schoolYearId, excludeYear as string)
-    //         )
-    //       );
-    //     }
-    //   }
-    // }
-  }
-
   await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
 
   try {
-    const response = await db.transaction(async (tx) => {
-      const users = await tx.query.users.findMany({
-        where: (userObj, { ne }) => ne(userObj.id, user.id),
-        with: {
-          schools: {
-            where: (schoolUser, { eq }) => eq(schoolUser.schoolId, id),
-          },
-        },
-        limit: pageSize,
-        offset: page * pageSize,
-      });
-      const count = await tx
-        .select({ count: sql<string>`COUNT(*)` })
-        .from(schema.users)
-        .innerJoin(
-          schema.schoolsUsers,
-          eq(schema.users.id, schema.schoolsUsers.userId)
+    const response = await db.transaction().execute(async (tx) => {
+      const users = await tx
+        .selectFrom("users")
+        .select((eb) => [
+          "users.id",
+          "firstName",
+          "lastName",
+          "email",
+          "telephone",
+          jsonArrayFrom(
+            eb
+              .selectFrom("schoolsUsers")
+              .select(["schoolsUsers.id", "role"])
+              .where("schoolsUsers.schoolId", "=", id)
+              .whereRef("users.id", "=", "schoolsUsers.userId")
+          ).as("schools"),
+        ])
+        .innerJoin("schoolsUsers", "users.id", "schoolsUsers.userId")
+        .where(({ and, eb }) =>
+          and([
+            eb("schoolsUsers.schoolId", "=", id),
+            eb("users.id", "!=", user.id),
+          ])
         )
-        .where(
-          and(
-            ne(schema.users.id, user.id),
-            eq(schema.schoolsUsers.schoolId, id)
-          )
-        );
+        .$if(!!role, (qb) => {
+          if (role.eq) {
+            return qb.where("schoolsUsers.role", "=", role.eq as ROLE);
+          }
 
-      return { users, count: parseInt(count[0].count) };
+          if (role.neq) {
+            return qb.where("schoolsUsers.role", "!=", role.neq as ROLE);
+          }
+
+          return qb;
+        })
+        .$if(!!year || !!classId, (qb) => {
+          let joinedQb = qb.innerJoin(
+            "classes",
+            "classes.schoolId",
+            "schoolsUsers.schoolId"
+          );
+          if (year) {
+            if (year.eq) {
+              joinedQb = joinedQb.where("classes.year", "=", year.eq);
+            }
+
+            if (year.neq) {
+              joinedQb = joinedQb.where("classes.year", "!=", year.neq);
+            }
+          }
+
+          if (classId) {
+            if (classId.eq) {
+              joinedQb = joinedQb.where("classes.id", "=", classId.eq);
+            }
+            if (classId.neq) {
+              joinedQb = joinedQb.where("classes.id", "!=", classId.neq);
+            }
+          }
+
+          return joinedQb;
+        })
+        .limit(pageSize)
+        .offset(page * pageSize)
+        .execute();
+      const result = await tx
+        .selectFrom("users")
+        .select(({ fn }) => fn.count<number>("users.id").as("count"))
+        .innerJoin("schoolsUsers", "users.id", "schoolsUsers.userId")
+        .where(({ and, eb }) =>
+          and([
+            eb("schoolsUsers.schoolId", "=", id),
+            eb("users.id", "!=", user.id),
+          ])
+        )
+        .$if(!!role, (qb) => {
+          if (role.eq) {
+            return qb.where("schoolsUsers.role", "=", role.eq);
+          }
+
+          if (role.neq) {
+            return qb.where("schoolsUsers.role", "!=", role.neq);
+          }
+
+          return qb;
+        })
+        .$if(!!year || !!classId, (qb) => {
+          let joinedQb = qb.innerJoin(
+            "classes",
+            "classes.schoolId",
+            "schoolsUsers.schoolId"
+          );
+          if (year) {
+            if (year.eq) {
+              joinedQb = joinedQb.where("classes.year", "=", year.eq);
+            }
+
+            if (year.neq) {
+              joinedQb = joinedQb.where("classes.year", "!=", year.neq);
+            }
+          }
+
+          if (classId) {
+            if (classId.eq) {
+              joinedQb = joinedQb.where("classes.id", "=", classId.eq);
+            }
+            if (classId.neq) {
+              joinedQb = joinedQb.where("classes.id", "!=", classId.neq);
+            }
+          }
+
+          return joinedQb;
+        })
+        .executeTakeFirst();
+
+      return { users, count: result?.count ?? 0 };
     });
 
     return {
-      ...response,
+      users: response.users,
+      count: response.count,
     };
   } catch (e) {
     console.error(e);
