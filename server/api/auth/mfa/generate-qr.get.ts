@@ -5,7 +5,7 @@ import { HMAC } from "oslo/crypto";
 
 export default defineEventHandler(async (event) => {
   try {
-    const user = await useServerUser(event);
+    const user = event.context.user;
 
     const secret = await new HMAC("SHA-1").generateKey();
 

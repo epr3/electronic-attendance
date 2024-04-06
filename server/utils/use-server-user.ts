@@ -1,34 +1,35 @@
-import type { H3Event } from "h3";
+import { now, parseAbsolute } from "@internationalized/date";
 import { jsonArrayFrom } from "kysely/helpers/postgres";
 
-export async function getServerUser(event: H3Event) {
-  const cookie = getCookie(event, COOKIE_NAME);
-
-  if (!cookie) {
-    return null;
-  }
-
+export async function getServerUser(sessionId: string) {
   const session = await db
     .selectFrom("userSessions")
     .selectAll()
-    .where("userSessions.id", "=", cookie)
+    .where("userSessions.id", "=", sessionId)
     .executeTakeFirst();
 
   if (!session) {
     return null;
   }
 
-  const isSessionExpired = dayjs().isAfter(dayjs(session.expiresAt));
+  const nowDate = now("UTC");
+  const sessionCreated = parseAbsolute(session.createdAt, "UTC");
+  const isSessionExpired =
+    nowDate.compare(
+      sessionCreated.add({
+        days: Number(process.env.SESSION_EXPIRY_DAYS as string),
+      })
+    ) >= 0;
 
   if (isSessionExpired) {
     await db
       .deleteFrom("userSessions")
-      .where("userSessions.id", "=", cookie)
+      .where("userSessions.id", "=", sessionId)
       .executeTakeFirst();
 
-    setCookie(event, COOKIE_NAME, "", { ...COOKIE_ATTRIBUTES, maxAge: -1 });
     return null;
   }
+
   const user = await db
     .selectFrom("users")
     .select((eb) => [
@@ -41,7 +42,7 @@ export async function getServerUser(event: H3Event) {
       jsonArrayFrom(
         eb
           .selectFrom("schoolsUsers")
-          .selectAll()
+          .selectAll("schoolsUsers")
           .whereRef("schoolsUsers.userId", "=", "users.id")
       ).as("schools"),
     ])
@@ -52,19 +53,5 @@ export async function getServerUser(event: H3Event) {
     return null;
   }
 
-  return { ...user, session };
-}
-
-export async function useServerUser(event: H3Event) {
-  const user = await getServerUser(event);
-
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "UNAUTHORIZED",
-      message: "Not logged in.",
-    });
-  }
-
-  return user;
+  return { user, session };
 }

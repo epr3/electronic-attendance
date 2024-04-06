@@ -58,17 +58,7 @@ const onSubmit = handleSubmit(async (values) => {
 
 <template>
   <div class="flex flex-col space-y-8">
-    <div class="flex space-x-4 items-center">
-      <Button size="icon" as-child>
-        <NuxtLink
-          :to="routes.users.index({ schoolId: route.params.id as string })"
-        >
-          <div class="i-heroicons-arrow-left" />
-        </NuxtLink>
-      </Button>
-
-      <h2 class="text-2xl font-bold">New user</h2>
-    </div>
+    <h2 class="text-2xl font-bold">New user</h2>
     <form class="flex flex-col space-y-4 items-stretch" @submit="onSubmit">
       <div class="flex space-x-4">
         <Field v-slot="{ componentField }" name="firstName">

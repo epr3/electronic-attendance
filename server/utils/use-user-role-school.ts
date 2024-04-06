@@ -12,7 +12,14 @@ export async function useUserRoleSchool(
     ROLE.PARENT,
   ]
 ) {
-  const user = await useServerUser(event);
+  const user = event.context.user;
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "UNAUTHORIZED",
+      message: "You need to be authenticated to perform this action",
+    });
+  }
 
   const schoolUser = await db
     .selectFrom("schoolsUsers")

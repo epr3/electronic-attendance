@@ -17,8 +17,9 @@ export default defineEventHandler(async (event) => {
 
   const id = event.context.params!.id;
 
-  const user = await useServerUser(event);
   await useUserRoleSchool(event, id, [ROLE.ADMIN, ROLE.DIRECTOR]);
+
+  const user = event.context.user!;
 
   try {
     const response = await db.transaction().execute(async (tx) => {

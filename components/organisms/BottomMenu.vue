@@ -16,7 +16,7 @@ defineProps<{
       v-for="item in navItems"
       :key="item.path"
       :to="item.path"
-      active-class="bg-brand-shade-light !text-gray9"
+      exact-active-class="bg-brand-shade-light !text-gray9"
       :class="
         cn(
           'p-4 flex flex-col text-white items-center justify-center border-l last:border-r border-brand-shade-light hover:(bg-brand-shade-light text-gray9)'

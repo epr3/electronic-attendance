@@ -2,7 +2,19 @@ import { type Database } from "~/database/schema"; // this is the Database inter
 import pg from "pg";
 import { CamelCasePlugin, Kysely, PostgresDialect } from "kysely";
 
-const { Pool } = pg;
+const { Pool, types } = pg;
+
+types.setTypeParser(types.builtins.TIMESTAMP, (value) => {
+  return value === null
+    ? null
+    : new Date(value).toISOString().split(".")[0] + "Z";
+});
+
+types.setTypeParser(types.builtins.TIMESTAMPTZ, (value) => {
+  return value === null
+    ? null
+    : new Date(value).toISOString().split(".")[0] + "Z";
+});
 
 const runtimeConfig = useRuntimeConfig();
 const dialect = new PostgresDialect({

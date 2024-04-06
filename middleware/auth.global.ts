@@ -1,19 +1,20 @@
-import type { ROLE, SchoolUser, User, UserSession } from "~/database/schema";
+import type { NuxtError } from "#app";
+import type { SchoolUser, User, UserSession } from "~/database/schema";
 
 export default defineNuxtRouteMiddleware(async () => {
-  const user = useUser();
-  if (!user.value) {
-    const { data, error } = await useFetch<
-      User & {
-        roles: ROLE[];
-        session: UserSession;
-        schools: SchoolUser[];
-      }
-    >(api.auth.session);
-    if (error.value) {
-      return abortNavigation(error.value);
-    }
+  const sessionData = useUserSession();
 
-    user.value = data.value ?? null;
+  try {
+    const data = await useRequestFetch()<{
+      user: User & {
+        schools: SchoolUser[];
+      };
+      session: UserSession;
+    }>(api.auth.session);
+
+    console.log("middleware", data);
+    sessionData.value = data;
+  } catch (error) {
+    return abortNavigation(error as NuxtError);
   }
 });

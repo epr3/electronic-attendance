@@ -28,8 +28,8 @@ export enum PRIMARY_SCHOOL_MARKS {
 export interface EventsTable {
   id: string;
   schedule_student_id: string;
-  created_at: Date;
-  date: Date;
+  created_at: string;
+  date: string;
   event_type: EVENT_TYPE;
 }
 

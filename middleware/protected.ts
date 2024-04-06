@@ -1,24 +1,25 @@
 import { ROLE } from "~/database/schema";
 
 export default defineNuxtRouteMiddleware(async () => {
-  const user = useUser();
+  const data = useUserSession();
 
-  console.log(user.value);
-  if (!user.value) {
+  console.log("protected", data.value);
+  if (!data.value || !data.value.user || !data.value.session) {
     return navigateTo("/login");
   }
 
   if (
-    user.value &&
-    !user.value.mfaEnabled &&
-    user.value.schools.some((item) =>
+    data.value &&
+    data.value.user &&
+    !data.value.user.mfaEnabled &&
+    data.value.user.schools.some((item) =>
       [ROLE.ADMIN, ROLE.DIRECTOR, ROLE.TEACHER].includes(item.role)
     )
   ) {
     return navigateTo(routes.auth.mfa);
   }
 
-  if (user.value && !user.value.session.mfaVerified) {
+  if (data.value && data.value.session && !data.value.session.mfaVerified) {
     return navigateTo(routes.auth.mfaVerify);
   }
 });

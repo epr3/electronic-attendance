@@ -27,12 +27,13 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const user = await useServerUser(event);
+    const user = event.context.user;
+    const session = event.context.session;
 
     await db.transaction().execute(async (tx) => {
       await tx
         .deleteFrom("userMfas")
-        .where("userMfas.userId", "=", user.id)
+        .where("userMfas.userId", "=", user!.id)
         .executeTakeFirst();
 
       await tx
@@ -40,22 +41,32 @@ export default defineEventHandler(async (event) => {
         .values({
           id: createId(),
           secret: input.secret,
-          userId: user.id,
+          userId: user!.id,
           emailOnly: input.emailOnly,
         })
+        .executeTakeFirst();
+
+      await tx
+        .updateTable("users")
+        .set({ mfaEnabled: true })
+        .where("id", "=", user!.id)
         .executeTakeFirst();
 
       await tx
         .updateTable("userSessions")
         .set({ mfaVerified: true })
         .where(({ and, eb }) =>
-          and([eb("userId", "=", user.id), eb("id", "=", user.session.id)])
+          and([eb("userId", "=", user!.id), eb("id", "=", session!.id)])
         )
         .executeTakeFirst();
     });
 
+    event.context.user = { ...event.context.user!, mfaEnabled: true };
+    event.context.session = { ...event.context.session!, mfaVerified: true };
+
     return sendNoContent(event, 204);
   } catch (e) {
+    console.error(e);
     return createError({
       statusCode: 500,
       statusMessage: "INTERNAL_SERVER_ERROR",

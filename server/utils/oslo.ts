@@ -5,16 +5,25 @@ import { TimeSpan } from "oslo";
 
 const totpController = new TOTPController();
 
-const COOKIE_NAME = "electonic-attendance_session";
+const COOKIE_NAME = "electronic-attendance_session";
+
+const DEFAULT_TIME_SPAN = new TimeSpan(
+  Number(process.env.SESSION_EXPIRY_DAYS as string),
+  "d"
+);
+
 const COOKIE_ATTRIBUTES: CookieAttributes = {
-  maxAge: new TimeSpan(30, "d").seconds(),
   httpOnly: true,
   sameSite: "lax",
   path: "/",
   secure: !process.dev,
 };
-const createCookie = (sessionId: string) =>
-  new Cookie(COOKIE_NAME, sessionId, COOKIE_ATTRIBUTES);
+const createCookie = (sessionId: string, expires: Date) =>
+  new Cookie(COOKIE_NAME, sessionId, {
+    ...COOKIE_ATTRIBUTES,
+    expires,
+    maxAge: DEFAULT_TIME_SPAN.seconds(),
+  });
 
 const argon2id = new Argon2id();
 

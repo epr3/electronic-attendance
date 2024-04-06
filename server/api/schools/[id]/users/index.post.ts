@@ -1,3 +1,4 @@
+import { now, parseAbsolute } from "@internationalized/date";
 import { createId } from "@paralleldrive/cuid2";
 import { generateRandomString, alphabet } from "oslo/crypto";
 import { nativeEnum, object, string } from "zod";
@@ -29,12 +30,16 @@ export default defineEventHandler(async (event) => {
           lastName: input.lastName,
           email: input.email,
           telephone: input.telephone,
-          createdAt: dayjs().utc().toDate(),
-          updatedAt: dayjs().utc().toDate(),
+          createdAt: now("UTC").toAbsoluteString(),
+          updatedAt: now("UTC").toAbsoluteString(),
         })
         .returningAll()
         .executeTakeFirstOrThrow();
-      if (dayjs(Number(user.createdAt)).isSame(Number(user.updatedAt))) {
+      if (
+        parseAbsolute(user.createdAt, "UTC").compare(
+          parseAbsolute(user.updatedAt, "UTC")
+        ) === 0
+      ) {
         await tx
           .insertInto("tokens")
           .values({
@@ -42,7 +47,7 @@ export default defineEventHandler(async (event) => {
             email: input.email,
             token: generateRandomString(63, alphabet("a-z", "0-9")),
             type: TOKEN_TYPE.RESET_PASSWORD,
-            expiresAt: dayjs().utc().add(1, "day").toDate(),
+            expiresAt: now("UTC").add({ days: 1 }).toAbsoluteString(),
           })
           .executeTakeFirst();
       }

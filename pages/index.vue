@@ -3,9 +3,9 @@ definePageMeta({
   middleware: ["protected"],
 });
 
-const user = useUser();
+const session = useUserSession();
 
-await navigateTo(routes.school.get(user.value!.schools[0].schoolId), {
+await navigateTo(routes.school.get(session.value!.user.schools[0].schoolId), {
   replace: true,
 });
 </script>

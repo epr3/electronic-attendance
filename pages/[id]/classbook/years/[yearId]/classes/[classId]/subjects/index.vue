@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import { rrulestr } from "rrule";
+import { parseDateTime } from "@internationalized/date";
 import { ModalActionSymbol } from "~/components/organisms/ModalContext.vue";
 
 const route = useRoute();
-const { $dayjs, routes, api } = useNuxtApp();
+const { routes, api } = useNuxtApp();
 
 const actions = inject(ModalActionSymbol);
 const subjectId = ref("");
@@ -41,7 +42,7 @@ const deleteSchedule = (scheduleId: string) =>
 const returnDateFromRrule = (rule: string) => {
   const rrule = rrulestr(rule);
 
-  return $dayjs(rrule.options.dtstart).format("dddd");
+  return parseDateTime(rrule.options.dtstart.toISOString()).toString();
 };
 </script>
 

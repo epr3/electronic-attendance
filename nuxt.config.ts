@@ -17,7 +17,7 @@ export default defineNuxtConfig({
   },
 
   modules: [
-    "@nuxtjs/eslint-module",
+    "@nuxt/eslint",
     "@unocss/nuxt",
     "@vueuse/nuxt",
     "@vee-validate/nuxt",

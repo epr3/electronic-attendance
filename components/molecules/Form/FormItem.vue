@@ -7,7 +7,6 @@ export const FORM_ITEM_INJECTION_KEY = Symbol(
 
 <script lang="ts" setup>
 import { provide, useAttrs } from "vue";
-import { useId } from "radix-vue";
 
 defineOptions({
   inheritAttrs: false,

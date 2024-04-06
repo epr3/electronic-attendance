@@ -34,8 +34,8 @@ export type ParentUpdate = Updateable<ParentsTable>;
 export interface SchoolTermsTable {
   id: string;
   name: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   schoolId: string;
 }
 
@@ -46,8 +46,8 @@ export type SchoolTermUpdate = Updateable<SchoolTermsTable>;
 export interface SchoolHolidaysTable {
   id: string;
   name: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   schoolId: string;
 }
 

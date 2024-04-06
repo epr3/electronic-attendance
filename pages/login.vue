@@ -13,20 +13,18 @@ const { handleSubmit, isSubmitting } = useForm({
 });
 
 const onSubmit = handleSubmit(async (values) => {
-  const { error } = await useFetch<{ schoolId: string }, { message: string }>(
-    api.auth.login,
-    {
+  try {
+    await $fetch<{ schoolId: string }>(api.auth.login, {
       method: "POST",
       body: { email: values.email, password: values.password },
-    }
-  );
+    });
 
-  if (error.value) {
-    generalError.value = error.value?.message ?? "";
+    await navigateTo(routes.home, { replace: true });
+  } catch (error) {
+    console.error(error);
+    generalError.value = error.message ?? "";
     return;
   }
-
-  await navigateTo(routes.home, { replace: true });
 });
 </script>
 

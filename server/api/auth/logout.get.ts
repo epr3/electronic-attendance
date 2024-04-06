@@ -24,6 +24,8 @@ export default defineEventHandler(async (event) => {
   }
 
   setCookie(event, COOKIE_NAME, "", { ...COOKIE_ATTRIBUTES, maxAge: -1 });
+  event.context.user = null;
+  event.context.session = null;
 
   return sendRedirect(event, "/login");
 });

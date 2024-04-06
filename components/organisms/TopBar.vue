@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-const user = useUser();
+const session = useUserSession();
 const logout = async () => {
-  await useFetch(api.auth.logout);
-  user.value = null;
+  await $fetch(api.auth.logout);
+  session.value = null;
   await navigateTo(routes.auth.login);
 };
 </script>

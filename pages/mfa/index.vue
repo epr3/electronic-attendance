@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-const user = useUser();
 import { object, array, string } from "zod";
 
 const { data } = await useFetch<{ qrCode: string; secret: string }>(
@@ -18,7 +17,7 @@ const { handleSubmit, isSubmitting, errors } = useForm({
 });
 
 async function emailEnroll() {
-  await useFetch(api.auth.mfaEnroll, {
+  await $fetch(api.auth.mfaEnroll, {
     method: "POST",
     body: { secret: secret.value, emailOnly: false },
   });
@@ -27,22 +26,14 @@ async function emailEnroll() {
 }
 
 const onSubmit = handleSubmit(async (values) => {
-  await useAsyncData("verify", () =>
-    $fetch(api.auth.mfaEnroll, {
-      method: "POST",
-      body: {
-        secret: secret.value,
-        emailOnly: false,
-        token: values.token.join(""),
-      },
-    })
-  );
-
-  user.value = {
-    ...user.value!,
-    mfaEnabled: true,
-    session: { ...user.value!.session, mfaVerified: true },
-  };
+  await $fetch(api.auth.mfaEnroll, {
+    method: "POST",
+    body: {
+      secret: secret.value,
+      emailOnly: false,
+      token: values.token.join(""),
+    },
+  });
 
   await navigateTo(routes.home, { replace: true });
   return;

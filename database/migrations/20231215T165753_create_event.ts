@@ -35,7 +35,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     )
     .addColumn("event_type", sql`event_type`, (col) => col.notNull())
     .addColumn("date", "date", (col) => col.notNull())
-
     .execute();
 
   await db.schema

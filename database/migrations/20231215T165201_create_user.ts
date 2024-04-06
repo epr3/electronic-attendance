@@ -66,7 +66,7 @@ export async function up(db: Kysely<any>): Promise<void> {
     .addColumn("mfa_verified", "boolean", (col) =>
       col.notNull().defaultTo(false)
     )
-    .addColumn("expires_at", "timestamp", (col) => col.notNull())
+    .addColumn("created_at", "timestamp", (col) => col.notNull())
     .execute();
 }
 

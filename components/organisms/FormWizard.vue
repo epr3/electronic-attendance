@@ -44,10 +44,10 @@ const currentInitialValues = computed(() => {
 });
 // We are using the "submit" handler to progress to next steps
 // and to submit the form if its the last step
-const { values, handleSubmit, resetForm } = useForm({
+const { values, handleSubmit } = useForm({
   // vee-validate will be aware of computed schema changes
   validationSchema: currentSchema,
-  // initialValues: {},
+  initialValues: currentInitialValues,
   // turn this on so each step values won't get removed when you move back or to the next step
   keepValuesOnUnmount: true,
 });
@@ -60,17 +60,17 @@ function goToPrev() {
   currentStepIdx.value--;
 }
 
-watch(
-  currentStepIdx,
-  () => {
-    resetForm({
-      values: merge(currentInitialValues.value, cloneDeep(values)),
-    });
-  },
-
-  { immediate: true }
-);
-
+// watch(
+//   currentStepIdx,
+//   () => {
+//     resetForm({
+//       values: merge(currentInitialValues.value, cloneDeep(values)),
+//     });
+//   },
+//
+//   { immediate: true }
+// );
+//
 // We are using the "submit" handler to progress to next steps
 // and to submit the form if its the last step
 const onSubmit = handleSubmit(() => {

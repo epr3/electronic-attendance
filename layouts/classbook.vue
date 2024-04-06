@@ -3,11 +3,11 @@ definePageMeta({
   middleware: ["protected"],
 });
 
-const user = useUser();
+const session = useUserSession();
 
 const route = useRoute();
 const navItems = ref<{ icon: string; path: string; name: string }[]>([]);
-if (user.value?.schools) {
+if (session.value?.user.schools) {
   navItems.value = [
     {
       icon: "i-heroicons-rectangle-group-solid",
@@ -18,7 +18,8 @@ if (user.value?.schools) {
       icon: "i-heroicons-user-group-solid",
       path: routes.users.index({
         schoolId:
-          (route.params.id as string) || user.value!.schools[0].schoolId,
+          (route.params.id as string) ||
+          session.value!.user.schools[0].schoolId,
       }),
       name: "Users",
     },

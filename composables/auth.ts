@@ -4,14 +4,13 @@ import {
   type User,
 } from "~/database/schema";
 
-export const useUser = () => {
-  const user = useState<
-    | (User & {
-        session: UserSession;
-        schools: SchoolUser[];
-      })
-    | null
-  >("user", () => null);
+export const useUserSession = () => {
+  const data = useState<{
+    user: User & {
+      schools: SchoolUser[];
+    };
+    session: UserSession;
+  } | null>("user", () => null);
 
-  return user;
+  return data;
 };

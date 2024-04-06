@@ -1,3 +1,4 @@
+import { now } from "@internationalized/date";
 import { generateRandomString, alphabet } from "oslo/crypto";
 import { object, string } from "zod";
 
@@ -39,7 +40,7 @@ export default defineEventHandler(async (event) => {
       .values({
         id: sessionId,
         userId: key.userId,
-        expiresAt: dayjs().add(30, "d").utc().toDate(),
+        createdAt: now("UTC").toAbsoluteString(),
       })
       .executeTakeFirst();
 
@@ -49,7 +50,12 @@ export default defineEventHandler(async (event) => {
       .where("users.id", "=", key.userId)
       .executeTakeFirst();
 
-    const cookie = createCookie(sessionId);
+    const cookie = createCookie(
+      sessionId,
+      now("UTC")
+        .add({ days: Number(process.env.SESSION_EXPIRY_DAYS as string) })
+        .toDate()
+    );
 
     setCookie(event, COOKIE_NAME, cookie.value, {
       ...cookie.attributes,

@@ -21,9 +21,9 @@ export interface UsersTable {
   email: string;
   telephone: string;
   mfaEnabled?: boolean;
-  verifiedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  verifiedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type User = Selectable<UsersTable>;
@@ -56,7 +56,7 @@ export interface TokensTable {
   email: string;
   token: string;
   type: TOKEN_TYPE;
-  expiresAt: Date;
+  expiresAt: string;
 }
 
 export type Token = Selectable<TokensTable>;
@@ -67,7 +67,7 @@ export interface UserSessionsTable {
   id: string;
   userId: string;
   mfaVerified?: boolean;
-  expiresAt: Date;
+  createdAt: string;
 }
 
 export type UserSession = Selectable<UserSessionsTable>;

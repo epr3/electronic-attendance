@@ -9,14 +9,14 @@ const navItems = [
   },
   {
     icon: "i-heroicons-user-group-solid",
-    path: routes.users.index({
+    path: routes.admin.students.index({
       schoolId: route.params.id as string,
     }),
     name: "Students",
   },
   {
     icon: "i-heroicons-users-solid",
-    path: routes.users.index({
+    path: routes.admin.teachers.index({
       schoolId: route.params.id as string,
     }),
     name: "Teachers",

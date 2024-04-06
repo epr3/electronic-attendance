@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-const user = useUser();
 import { object, string, array } from "zod";
 
 const { toast } = useToast();
@@ -28,10 +27,6 @@ const onSubmit = handleSubmit(async (values) => {
     });
   }
 
-  user.value = {
-    ...user.value!,
-    session: { ...user.value!.session, mfaVerified: true },
-  };
   await navigateTo(routes.home, { replace: true });
 });
 </script>

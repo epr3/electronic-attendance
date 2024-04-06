@@ -1,9 +1,8 @@
 import { object, string } from "zod";
 import { generateRandomString, alphabet } from "oslo/crypto";
-import { HMAC } from "oslo/crypto";
-import { encodeHex } from "oslo/encoding";
 import { ROLE, TOKEN_TYPE } from "~/database/schema";
 import { createId } from "@paralleldrive/cuid2";
+import { now, parseAbsolute } from "@internationalized/date";
 
 export default defineEventHandler(async (event) => {
   const input = await useValidatedBody(
@@ -29,9 +28,9 @@ export default defineEventHandler(async (event) => {
           lastName: input.lastName as string,
           email: input.email as string,
           telephone: input.telephone as string,
-          createdAt: dayjs().utc().toDate(),
-          updatedAt: dayjs().utc().toDate(),
-          mfaEnabled: true,
+          createdAt: now("UTC").toAbsoluteString(),
+          updatedAt: now("UTC").toAbsoluteString(),
+          mfaEnabled: false,
         })
         .returning(["id", "email", "createdAt", "updatedAt"])
         .executeTakeFirstOrThrow();
@@ -45,7 +44,10 @@ export default defineEventHandler(async (event) => {
         })
         .executeTakeFirstOrThrow();
 
-      if (dayjs(Number(user.createdAt)).isSame(Number(user.updatedAt))) {
+      const createdAt = parseAbsolute(user.createdAt, "UTC");
+      const updatedAt = parseAbsolute(user.updatedAt, "UTC");
+
+      if (createdAt.compare(updatedAt) === 0) {
         await tx
           .insertInto("tokens")
           .values({
@@ -53,19 +55,7 @@ export default defineEventHandler(async (event) => {
             email: input.email,
             token: generateRandomString(63, alphabet("a-z", "0-9")),
             type: TOKEN_TYPE.VALIDATION,
-            expiresAt: dayjs().utc().add(1, "day").toDate(),
-          })
-          .executeTakeFirstOrThrow();
-
-        const secret = await new HMAC("SHA-1").generateKey();
-
-        await tx
-          .insertInto("userMfas")
-          .values({
-            id: createId(),
-            userId: user.id,
-            secret: encodeHex(secret),
-            emailOnly: false,
+            expiresAt: now("UTC").add({ days: 1 }).toAbsoluteString(),
           })
           .executeTakeFirstOrThrow();
 
